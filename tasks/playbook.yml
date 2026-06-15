@@ -1,0 +1,22 @@
+# Optional Converge playbook for the porting ladder. The primary driver is
+# .claude/workflows/port-sdk.js; this file lets `/converge-control run` drive the
+# same rungs (the loader discovers tasks/NN-*/ folders by alphabetical order).
+name: port-sdk
+description: TDD-port the Python agent_sdk to Go at 100% API + behavior parity.
+run:
+  mode: oneoff
+  maxTaskAttempts: 3
+goals:
+  - id: production-ready
+    description: The Go SDK is gofmt-clean, vet-clean, fully tested, 100%-parity, benches READY.
+    checks:
+      - id: gofmt
+        cmd: test -z "$(gofmt -l .)"
+      - id: vet
+        cmd: go vet ./...
+      - id: tests
+        cmd: go test ./...
+      - id: parity
+        cmd: go run ./cmd/parity
+      - id: benches
+        cmd: go run ./cmd/bench

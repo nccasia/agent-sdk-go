@@ -1,0 +1,6 @@
+# Go
+/cmd/bench/bench
+bin/
+*.test
+*.out
+benchmarks/**/results/
