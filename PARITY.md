@@ -21,9 +21,9 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Lobes → preact.Lobes
 - [x] Stages → preact.Stages
 - [ ] Skill → skills.Skill
-- [ ] Session → session.Session
-- [ ] SessionState → session.SessionState
-- [ ] Turn → session.Turn
+- [x] Session → session.Session
+- [x] SessionState → session.SessionState
+- [x] Turn → session.Turn
 - [ ] Memory → memory.Memory
 - [ ] MemoryItem → memory.MemoryItem
 - [ ] Scratchpad → memory.Scratchpad
@@ -63,25 +63,25 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] to_viewer_record → viewer.ToRecord
 
 ## Results + events (rung 03)
-- [ ] AgentResult → result.AgentResult
-- [ ] AgentStream → result.AgentStream
-- [ ] Trace → result.Trace
-- [ ] Usage → result.Usage
-- [ ] Refusal → result.Refusal
-- [ ] MemoryUpdate → result.MemoryUpdate
-- [ ] Optimization → result.Optimization
-- [ ] ActivationSnapshot → result.ActivationSnapshot
+- [x] AgentResult → result.AgentResult
+- [x] AgentStream → result.AgentStream
+- [x] Trace → result.Trace
+- [x] Usage → result.Usage
+- [x] Refusal → result.Refusal
+- [x] MemoryUpdate → result.MemoryUpdate
+- [x] Optimization → result.Optimization
+- [x] ActivationSnapshot → result.ActivationSnapshot
 - [x] Citation → contracts.Citation
-- [ ] RunStart → events.RunStart
-- [ ] PathResolved → events.PathResolved
-- [ ] StageStart → events.StageStart
-- [ ] TextDelta → events.TextDelta
-- [ ] ToolCall → events.ToolCall
-- [ ] ToolResult → events.ToolResult
-- [ ] CitationFound → events.CitationFound
-- [ ] MetaAction → events.MetaAction
-- [ ] StageEnd → events.StageEnd
-- [ ] Final → events.Final
+- [x] RunStart → events.RunStart
+- [x] PathResolved → events.PathResolved
+- [x] StageStart → events.StageStart
+- [x] TextDelta → events.TextDelta
+- [x] ToolCall → events.ToolCall
+- [x] ToolResult → events.ToolResult
+- [x] CitationFound → events.CitationFound
+- [x] MetaAction → events.MetaAction
+- [x] StageEnd → events.StageEnd
+- [x] Final → events.Final
 
 ## Framework primitives — _blocks (rung 01–08)
 - [x] Lobe → lobes.Lobe
