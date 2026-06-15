@@ -31,6 +31,10 @@ const RUNGS = [
 
 const MAX_WAVES = 3 // per rung, before recording BLOCKED and moving on
 
+// Absolute paths — spawned agents start at the session root, not the module dir.
+const REPO = (args && args.repo) || '/Users/minh/Documents/mezon-agent-sdk/agent-sdk-go'
+const PY = (args && args.python) || '/Users/minh/Documents/mezon-agent-sdk/agent-sdk'
+
 // Per-rung structured return — the model reports; the CLI/exit-codes decide.
 const VERDICT = {
   type: 'object',
@@ -62,9 +66,10 @@ const GATEWAY = {
 function rungPrompt(rung, wave) {
   return [
     `You are porting the Python agent_sdk to Go. Work ONLY on ladder rung "${rung}" (wave ${wave}/${MAX_WAVES}).`,
-    `Repo: the Go module is the current working directory (github.com/mezon/agent-sdk-go); the Python reference is ../agent-sdk.`,
+    `Run EVERY command from the Go module root: prefix shell commands with \`cd ${REPO} && …\` (the module is github.com/mezon/agent-sdk-go).`,
+    `The Python reference SDK is at ${PY} — read its modules and tests there.`,
     ``,
-    `1. Read tasks/${rung}/TASK.md — it lists the Python modules + the exact Python test files to translate, the public exports to expose (and check off in PARITY.md), the dep/deviation notes, and the "checks" commands.`,
+    `1. Read ${REPO}/tasks/${rung}/TASK.md — it lists the Python modules + the exact Python test files to translate, the public exports to expose (and check off in PARITY.md), the dep/deviation notes, and the "checks" commands.`,
     `2. STRICT TDD: for each named Python test file, write the equivalent Go *_test.go FIRST (translate test names: test_tight_adjust → TestTightAdjust; preserve assertions). Run them RED.`,
     `3. Implement ONLY this rung's Go package(s) until every "checks" command in the TASK.md exits 0. Do not modify other rungs' packages.`,
     `4. Keep \`gofmt -l .\` empty and \`go vet ./...\` clean for the packages you touched. Add testing.B micro-benchmarks for any hot path.`,
@@ -79,7 +84,7 @@ function rungPrompt(rung, wave) {
 phase('Bootstrap')
 log('Verifying rung 00 scaffold (module, cmd/parity, cmd/bench, ladder, PARITY.md)…')
 const boot = await agent(
-  'Verify the rung 00 scaffold of the Go agent-sdk-go module is in place and builds: run `go build ./...` (must succeed), `go run ./cmd/parity` (prints N/82), and confirm tasks/ contains the numbered TASK.md ladder and .claude/workflows/port-sdk.js exists. If go.mod is missing, run `go mod init github.com/mezon/agent-sdk-go`. Report a one-line status as VERDICT with rung="00-bootstrap".',
+  `Verify the rung 00 scaffold of the Go module at ${REPO} builds. Run every command with \`cd ${REPO} && …\`: \`go build ./...\` (must succeed), \`go run ./cmd/parity\` (prints N/82), and confirm tasks/ holds the numbered TASK.md ladder and .claude/workflows/port-sdk.js exists. Report a one-line status as VERDICT with rung="00-bootstrap".`,
   { schema: VERDICT, label: 'bootstrap', phase: 'Bootstrap' },
 )
 if (boot && boot.checksPass === false) {
@@ -99,7 +104,7 @@ for (const rung of RUNGS) {
   if (!verdict || !verdict.checksPass) {
     // Deterministic revert: do not let a red rung poison later rungs.
     await agent(
-      `Rung ${rung} did not reach green after ${MAX_WAVES} waves. Write a short tasks/${rung}/BLOCKED.md describing the failing checks and the root cause, then \`git restore .\` and \`git checkout -- .\` to discard any uncommitted partial work for this rung (keep prior rungs' commits intact). Report VERDICT with committed=false.`,
+      `Rung ${rung} did not reach green after ${MAX_WAVES} waves. From ${REPO}: write a short tasks/${rung}/BLOCKED.md describing the failing checks and the root cause, then \`cd ${REPO} && git add -A tasks/${rung}/BLOCKED.md && git stash --include-untracked\` is too aggressive — instead \`cd ${REPO} && git restore --staged . && git checkout -- . && git clean -fd agent_sdk benchmarks examples\` to discard uncommitted partial work for this rung while keeping prior rungs' commits and the new BLOCKED.md (commit BLOCKED.md first). Report VERDICT with committed=false.`,
       { schema: VERDICT, label: rung + ' revert', phase: 'Rung ' + rung },
     )
     log(`${rung}: BLOCKED after ${MAX_WAVES} waves — recorded and reverted; continuing.`)
@@ -112,7 +117,7 @@ phase('Gateway')
 log('Running the production-ready gateway: gofmt, vet, full test suite, parity, free benches, examples.')
 const gateway = await agent(
   [
-    'Run the production-ready parity gateway for the Go agent-sdk-go module and report each result:',
+    `Run the production-ready parity gateway for the Go module at ${REPO}. Prefix every command with \`cd ${REPO} && …\` and report each result:`,
     '- `gofmt -l .` (must print nothing) → gofmtClean',
     '- `go vet ./...` (clean) → vetClean',
     '- `go test ./... -race` (all green) → testsGreen',
