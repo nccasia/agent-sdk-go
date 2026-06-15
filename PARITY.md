@@ -24,17 +24,17 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Session → session.Session
 - [x] SessionState → session.SessionState
 - [x] Turn → session.Turn
-- [ ] Memory → memory.Memory
-- [ ] MemoryItem → memory.MemoryItem
-- [ ] Scratchpad → memory.Scratchpad
-- [ ] SemanticCache → memory.SemanticCache
+- [x] Memory → memory.Memory
+- [x] MemoryItem → memory.MemoryItem
+- [x] Scratchpad → memory.Scratchpad
+- [x] SemanticCache → memory.SemanticCache
 
 ## Shared context (rung 05–06)
-- [ ] AgentContext → context.AgentContext
-- [ ] Scope → context.Scope
-- [ ] Evidence → context.Evidence
-- [ ] current_context → context.Current
-- [ ] bind_context → context.Bind
+- [x] AgentContext → context.AgentContext
+- [x] Scope → context.Scope
+- [x] Evidence → context.Evidence
+- [x] current_context → context.Current
+- [x] bind_context → context.Bind
 - [ ] Metacognition → metacognition.Metacognition
 
 ## Tools / signals (rung 01,07)
