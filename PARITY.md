@@ -38,12 +38,12 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Metacognition → metacognition.Metacognition
 
 ## Tools / signals (rung 01,07)
-- [ ] tool → tools.Tool (builder)
-- [ ] Tool → tools.ToolDef
-- [ ] FunctionToolRuntime → tools.FunctionToolRuntime
-- [ ] MCPToolRuntime → mcp.MCPToolRuntime
-- [ ] MCPServerSpec → mcp.ServerSpec
-- [ ] MCPError → mcp.Error
+- [x] tool → tools.Tool (builder)
+- [x] Tool → tools.ToolDef
+- [x] FunctionToolRuntime → tools.FunctionToolRuntime
+- [x] MCPToolRuntime → mcp.MCPToolRuntime
+- [x] MCPServerSpec → mcp.ServerSpec
+- [x] MCPError → mcp.Error
 - [x] compile_signal → core/signal.Compile
 - [x] eval_signal → core/signal.Eval
 
@@ -54,7 +54,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] Report → bench.Report
 - [ ] probe → probe.Probe
 - [ ] ProbeRecord → probe.Record
-- [ ] DocWriteGuard → react.DocWriteGuard
+- [x] DocWriteGuard → react.DocWriteGuard
 - [ ] DocGroundingGuard → react.DocGroundingGuard
 - [ ] render_html → report.RenderHTML
 - [ ] write_html → report.WriteHTML
@@ -100,7 +100,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] LobeServices → contracts.LobeServices
 - [x] TurnContext → contracts.TurnContext
 - [x] ToolRuntime → contracts.ToolRuntime
-- [ ] CompositeToolRuntime → tools.CompositeToolRuntime
+- [x] CompositeToolRuntime → tools.CompositeToolRuntime
 - [ ] SkillRegistry → skills.Registry
 - [ ] SkillPack → skills.Pack
 - [ ] build_skill_prompt_block → skills.BuildPromptBlock
