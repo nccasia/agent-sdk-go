@@ -10,8 +10,8 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 ## Façade (rung 01–10)
 - [ ] PreactAgent → agent.PreactAgent
 - [ ] Engine → engine.Engine
-- [ ] Activable → activable.Activable
-- [ ] Layer → activable.Layer
+- [x] Activable → activable.Activable
+- [x] Layer → activable.Layer
 - [ ] Stage → engine.Stage
 - [ ] StageRegistry → engine.StageRegistry
 - [ ] stage → engine.Stage (builder)
@@ -44,8 +44,8 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] MCPToolRuntime → mcp.MCPToolRuntime
 - [ ] MCPServerSpec → mcp.ServerSpec
 - [ ] MCPError → mcp.Error
-- [ ] compile_signal → core/signal.Compile
-- [ ] eval_signal → core/signal.Eval
+- [x] compile_signal → core/signal.Compile
+- [x] eval_signal → core/signal.Eval
 
 ## Benchmark / probe / report (rung 13)
 - [ ] Harness → bench.Harness
@@ -71,7 +71,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] MemoryUpdate → result.MemoryUpdate
 - [ ] Optimization → result.Optimization
 - [ ] ActivationSnapshot → result.ActivationSnapshot
-- [ ] Citation → contracts.Citation
+- [x] Citation → contracts.Citation
 - [ ] RunStart → events.RunStart
 - [ ] PathResolved → events.PathResolved
 - [ ] StageStart → events.StageStart
@@ -85,26 +85,26 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 
 ## Framework primitives — _blocks (rung 01–08)
 - [ ] Lobe → lobes.Lobe
-- [ ] LobeSpec → core/spec.Lobe
+- [x] LobeSpec → core/spec.Lobe
 - [ ] LobeRegistry → lobes.Registry
-- [ ] PathSpec → core/spec.Path
-- [ ] Blackboard → core/attention.Blackboard
-- [ ] ContextNode → core/attention.ContextNode
-- [ ] build_attention → core/attention.Build
-- [ ] propagate → core/activate.Propagate
-- [ ] recognize_paths → core/feature.RecognizePaths
-- [ ] resolve_path → core/activate.ResolvePath
-- [ ] validate_network → core/spec.ValidateNetwork
+- [x] PathSpec → core/spec.Path
+- [x] Blackboard → core/attention.Blackboard
+- [x] ContextNode → core/attention.ContextNode
+- [x] build_attention → core/attention.Build
+- [x] propagate → core/activate.Propagate
+- [x] recognize_paths → core/feature.RecognizePaths
+- [x] resolve_path → core/activate.ResolvePath
+- [x] validate_network → core/spec.ValidateNetwork
 - [ ] tool_loop → engine.ToolLoop
-- [ ] LlmCall → contracts.LlmCall
-- [ ] LobeServices → contracts.LobeServices
-- [ ] TurnContext → contracts.TurnContext
-- [ ] ToolRuntime → contracts.ToolRuntime
+- [x] LlmCall → contracts.LlmCall
+- [x] LobeServices → contracts.LobeServices
+- [x] TurnContext → contracts.TurnContext
+- [x] ToolRuntime → contracts.ToolRuntime
 - [ ] CompositeToolRuntime → tools.CompositeToolRuntime
 - [ ] SkillRegistry → skills.Registry
 - [ ] SkillPack → skills.Pack
 - [ ] build_skill_prompt_block → skills.BuildPromptBlock
-- [ ] Claim → contracts.Claim
-- [ ] Memo → contracts.Memo
-- [ ] FinalEnvelope → contracts.FinalEnvelope
-- [ ] PINNED_LOBES → core/spec.PinnedLobes
+- [x] Claim → contracts.Claim
+- [x] Memo → contracts.Memo
+- [x] FinalEnvelope → contracts.FinalEnvelope
+- [x] PINNED_LOBES → core/spec.PinnedLobes
