@@ -35,7 +35,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Evidence → context.Evidence
 - [x] current_context → context.Current
 - [x] bind_context → context.Bind
-- [ ] Metacognition → metacognition.Metacognition
+- [x] Metacognition → metacognition.Metacognition
 
 ## Tools / signals (rung 01,07)
 - [ ] tool → tools.Tool (builder)
