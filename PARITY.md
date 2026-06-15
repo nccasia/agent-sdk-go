@@ -20,7 +20,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Flows → preact.Flows
 - [x] Lobes → preact.Lobes
 - [x] Stages → preact.Stages
-- [ ] Skill → skills.Skill
+- [x] Skill → skills.Skill
 - [x] Session → session.Session
 - [x] SessionState → session.SessionState
 - [x] Turn → session.Turn
@@ -101,9 +101,9 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] TurnContext → contracts.TurnContext
 - [x] ToolRuntime → contracts.ToolRuntime
 - [x] CompositeToolRuntime → tools.CompositeToolRuntime
-- [ ] SkillRegistry → skills.Registry
-- [ ] SkillPack → skills.Pack
-- [ ] build_skill_prompt_block → skills.BuildPromptBlock
+- [x] SkillRegistry → skills.Registry
+- [x] SkillPack → skills.Pack
+- [x] build_skill_prompt_block → skills.BuildPromptBlock
 - [x] Claim → contracts.Claim
 - [x] Memo → contracts.Memo
 - [x] FinalEnvelope → contracts.FinalEnvelope
