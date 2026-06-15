@@ -108,3 +108,16 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Memo → contracts.Memo
 - [x] FinalEnvelope → contracts.FinalEnvelope
 - [x] PINNED_LOBES → core/spec.PinnedLobes
+
+## LLM clients (rung 09)
+- [x] BaseClient → clients.BaseClient
+- [x] make_client → clients.MakeClient
+- [x] AnthropicClient → clients.AnthropicClient
+- [x] MiniMaxClient → clients.MiniMaxClient
+- [x] OpenAIClient → clients.OpenAIClient
+- [x] MixedClient → clients.MixedClient
+- [x] FakeClient → clients.FakeClient
+- [x] Message → clients.Message
+- [x] ProviderUsage → clients.ProviderUsage
+- [x] TextBlock → clients.TextBlock
+- [x] ToolUseBlock → clients.ToolUseBlock
