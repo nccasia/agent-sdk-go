@@ -6,7 +6,14 @@ package feature
 import (
 	"github.com/mezon/agent-sdk-go/agent_sdk/core/signal"
 	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
 )
+
+// PATHS returns the built-in production path recognizers — the 5 named reasoning
+// paths (qna/research/clarify/relational/onboarding). Each path BIASES its
+// member lobes when recognized; recognition never hard-gates. Mirrors
+// agent_sdk.paths.PATHS (the perception layer's named-path vocabulary).
+func PATHS() []spec.Path { return lobes.ProductionPaths() }
 
 // RecognizePaths scores every named path from the turn's free signals. Scores
 // are PATH PRIORS (clamped to [0,1] and rounded to 4 places), not a routing

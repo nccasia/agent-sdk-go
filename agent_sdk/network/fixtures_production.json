@@ -1,0 +1,211 @@
+[
+  {
+    "name": "empty",
+    "ctx": {},
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "emergent"
+  },
+  {
+    "name": "qna_question",
+    "ctx": {
+      "query": "what is the capital of France?",
+      "stages": [
+        "classify"
+      ]
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "synthesize",
+      "filter",
+      "respond"
+    ],
+    "path_name": "qna"
+  },
+  {
+    "name": "research_compare",
+    "ctx": {
+      "query": "compare and contrast the pros and cons of microservices versus monoliths in detail for our team",
+      "stages": [
+        "classify"
+      ],
+      "route": "complex"
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "classify",
+      "plan",
+      "research",
+      "synthesize",
+      "filter",
+      "respond"
+    ],
+    "path_name": "research"
+  },
+  {
+    "name": "clarify_followup",
+    "ctx": {
+      "query": "what about that?",
+      "stages": [
+        "condense",
+        "classify"
+      ],
+      "has_history": true,
+      "prev_path": "qna"
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "condense",
+      "classify",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "clarify"
+  },
+  {
+    "name": "relational_greeting",
+    "ctx": {
+      "query": "hello there"
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "relational"
+  },
+  {
+    "name": "onboarding_mode",
+    "ctx": {
+      "query": "onboarding",
+      "config_mode": true
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "onboarding"
+  },
+  {
+    "name": "memory_scoped",
+    "ctx": {
+      "query": "remind me",
+      "memory_enabled": true,
+      "memory_scopes": {
+        "conversation": 1
+      }
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "emergent"
+  },
+  {
+    "name": "skills_declared",
+    "ctx": {
+      "query": "do a thing",
+      "skills_declared": true,
+      "skills_in_use": true
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "skill_select",
+      "skill_active",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "emergent"
+  },
+  {
+    "name": "adaptive_tools",
+    "ctx": {
+      "query": "need a tool",
+      "tool_strategy": "adaptive"
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "tool_select",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "emergent"
+  },
+  {
+    "name": "scope_gate",
+    "ctx": {
+      "query": "x",
+      "scope_gate": true
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "scope_check",
+      "synthesize",
+      "respond"
+    ],
+    "path_name": "emergent"
+  },
+  {
+    "name": "fixed_format",
+    "ctx": {
+      "query": "format this",
+      "fixed_format": true
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "synthesize",
+      "format",
+      "respond"
+    ],
+    "path_name": "emergent"
+  },
+  {
+    "name": "complex_route_with_stage",
+    "ctx": {
+      "query": "analyze everything in great depth across many dimensions and produce a comprehensive structured report",
+      "stages": [
+        "classify"
+      ],
+      "route": "complex"
+    },
+    "activated": [
+      "memory_recall",
+      "session_recall",
+      "ctxvar_resolve",
+      "classify",
+      "plan",
+      "research",
+      "synthesize",
+      "filter",
+      "respond"
+    ],
+    "path_name": "research"
+  }
+]

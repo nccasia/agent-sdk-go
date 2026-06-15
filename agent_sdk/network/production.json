@@ -1,0 +1,493 @@
+{
+  "lobes": [
+    {
+      "id": "memory_recall",
+      "behavior": "recall",
+      "layer": 2,
+      "order": 0,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "memory"
+      ]
+    },
+    {
+      "id": "session_recall",
+      "behavior": "recall",
+      "layer": 2,
+      "order": 1,
+      "prior": 1.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "session_fact",
+        "session_summary"
+      ]
+    },
+    {
+      "id": "ctxvar_resolve",
+      "behavior": "recall",
+      "layer": 2,
+      "order": 3,
+      "prior": 1.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "ctxvar"
+      ]
+    },
+    {
+      "id": "skill_select",
+      "behavior": "select",
+      "layer": 3,
+      "order": 0,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "skill_pack"
+      ]
+    },
+    {
+      "id": "skill_active",
+      "behavior": "select",
+      "layer": 3,
+      "order": 1,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "skill_pack"
+      ]
+    },
+    {
+      "id": "tool_select",
+      "behavior": "select",
+      "layer": 3,
+      "order": 2,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": []
+    },
+    {
+      "id": "condense",
+      "behavior": "rewrite",
+      "layer": 4,
+      "order": 0,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {
+        "anaphora": 0.6,
+        "short_query": 0.6,
+        "has_history": 0.0
+      },
+      "writes": [
+        "retrieval_query"
+      ]
+    },
+    {
+      "id": "scope_check",
+      "behavior": "gate",
+      "layer": 4,
+      "order": 1,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "scope_verdict"
+      ]
+    },
+    {
+      "id": "classify",
+      "behavior": "route",
+      "layer": 4,
+      "order": 2,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {
+        "plan": 1.0,
+        "synthesize": 1.0
+      },
+      "signal_weights": {},
+      "writes": [
+        "route"
+      ]
+    },
+    {
+      "id": "plan",
+      "behavior": "decompose",
+      "layer": 4,
+      "order": 3,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 1.5,
+      "edges": {
+        "research": 1.0
+      },
+      "signal_weights": {},
+      "writes": [
+        "aspect"
+      ]
+    },
+    {
+      "id": "research",
+      "behavior": "fanout",
+      "layer": 4,
+      "order": 4,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {
+        "synthesize": 1.0
+      },
+      "signal_weights": {},
+      "writes": [
+        "memo"
+      ]
+    },
+    {
+      "id": "synthesize",
+      "behavior": "compose",
+      "layer": 4,
+      "order": 5,
+      "prior": 1.0,
+      "pinned": true,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "draft_answer"
+      ]
+    },
+    {
+      "id": "filter",
+      "behavior": "verify",
+      "layer": 5,
+      "order": 1,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "refusal_verdict"
+      ]
+    },
+    {
+      "id": "format",
+      "behavior": "style",
+      "layer": 5,
+      "order": 2,
+      "prior": 0.0,
+      "pinned": false,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": [
+        "formatted_answer"
+      ]
+    },
+    {
+      "id": "respond",
+      "behavior": "compose",
+      "layer": 5,
+      "order": 3,
+      "prior": 0.0,
+      "pinned": true,
+      "min_activation": 0.5,
+      "edges": {},
+      "signal_weights": {},
+      "writes": []
+    }
+  ],
+  "paths": [
+    {
+      "name": "qna",
+      "members": [
+        "synthesize",
+        "cite",
+        "filter"
+      ],
+      "bias": {
+        "synthesize": 0.1
+      },
+      "threshold": 0.5,
+      "grounds": true
+    },
+    {
+      "name": "research",
+      "members": [
+        "classify",
+        "plan",
+        "research",
+        "synthesize",
+        "cite",
+        "filter"
+      ],
+      "bias": {
+        "classify": 0.2,
+        "plan": 0.2,
+        "research": 0.2
+      },
+      "threshold": 0.5,
+      "grounds": true
+    },
+    {
+      "name": "clarify",
+      "members": [
+        "condense",
+        "scope_check",
+        "synthesize"
+      ],
+      "bias": {
+        "condense": 0.25
+      },
+      "threshold": 0.5,
+      "grounds": false
+    },
+    {
+      "name": "relational",
+      "members": [
+        "synthesize"
+      ],
+      "bias": {},
+      "threshold": 0.5,
+      "grounds": false
+    },
+    {
+      "name": "onboarding",
+      "members": [
+        "skill_select",
+        "skill_active",
+        "task_state"
+      ],
+      "bias": {
+        "skill_select": 0.2,
+        "skill_active": 0.2,
+        "task_state": 0.1
+      },
+      "threshold": 0.5,
+      "grounds": false
+    }
+  ],
+  "flows": [
+    {
+      "name": "qna",
+      "description": "qna (standard) — one agentic act loop over the full toolset",
+      "stages": [
+        "qna:act"
+      ],
+      "grounds": true,
+      "threshold": 0.5
+    },
+    {
+      "name": "research",
+      "description": "research (deep) — act, then ground (cite) + filter",
+      "stages": [
+        "research:act",
+        "research:cite",
+        "research:filter"
+      ],
+      "grounds": true,
+      "threshold": 0.5
+    },
+    {
+      "name": "clarify",
+      "description": "clarify (standard) — re-synthesis in the resolve-referent phase",
+      "stages": [
+        "clarify:synthesize"
+      ],
+      "grounds": false,
+      "threshold": 0.5
+    },
+    {
+      "name": "relational",
+      "description": "relational (direct) — one cheap reply for the social register",
+      "stages": [
+        "relational:synthesize"
+      ],
+      "grounds": false,
+      "threshold": 0.5
+    },
+    {
+      "name": "fallback",
+      "description": "fallback — universal agentic act when no named path matches",
+      "stages": [
+        "fallback:act"
+      ],
+      "grounds": false,
+      "threshold": 0.5
+    },
+    {
+      "name": "onboarding",
+      "description": "onboarding — self-configuration steward mode (admin.* tools)",
+      "stages": [
+        "onboarding:synthesize"
+      ],
+      "grounds": false,
+      "threshold": 0.5
+    }
+  ],
+  "stages": [
+    {
+      "id": "qna:act",
+      "name": "act",
+      "lobes": [
+        "synthesize",
+        "todo_list",
+        "skill_select",
+        "skill_active",
+        "memory_recall",
+        "session_recall",
+        "ctxvar_resolve",
+        "task_state"
+      ],
+      "loop": "agentic",
+      "tools": [],
+      "fanout_key": "",
+      "description": "act: do the work in one agentic ReAct loop over the agent's full toolset",
+      "hops": null
+    },
+    {
+      "id": "research:act",
+      "name": "act",
+      "lobes": [
+        "synthesize",
+        "todo_list",
+        "skill_select",
+        "skill_active",
+        "memory_recall",
+        "session_recall",
+        "ctxvar_resolve",
+        "task_state"
+      ],
+      "loop": "agentic",
+      "tools": [],
+      "fanout_key": "",
+      "description": "act: do the work in one agentic ReAct loop over the agent's full toolset",
+      "hops": null
+    },
+    {
+      "id": "research:cite",
+      "name": "cite",
+      "lobes": [
+        "cite"
+      ],
+      "loop": "single",
+      "tools": [],
+      "fanout_key": "",
+      "description": "research: citation grounding (pinned)",
+      "hops": null
+    },
+    {
+      "id": "research:filter",
+      "name": "filter",
+      "lobes": [
+        "filter"
+      ],
+      "loop": "single",
+      "tools": [],
+      "fanout_key": "",
+      "description": "research: ground-or-refuse filter (grounding output-contract)",
+      "hops": null
+    },
+    {
+      "id": "clarify:synthesize",
+      "name": "synthesize",
+      "lobes": [
+        "synthesize",
+        "condense",
+        "scope_check",
+        "memory_recall",
+        "session_recall"
+      ],
+      "loop": "agentic",
+      "tools": [],
+      "fanout_key": "",
+      "description": "clarify: re-synthesis in the resolve-referent phase (agentic)",
+      "hops": null
+    },
+    {
+      "id": "relational:synthesize",
+      "name": "synthesize",
+      "lobes": [
+        "synthesize"
+      ],
+      "loop": "single",
+      "tools": [],
+      "fanout_key": "",
+      "description": "relational: minimal synthesis (greeting / social register)",
+      "hops": null
+    },
+    {
+      "id": "fallback:act",
+      "name": "act",
+      "lobes": [
+        "synthesize",
+        "todo_list",
+        "skill_select",
+        "skill_active",
+        "memory_recall",
+        "session_recall",
+        "ctxvar_resolve",
+        "task_state"
+      ],
+      "loop": "agentic",
+      "tools": [],
+      "fanout_key": "",
+      "description": "act: do the work in one agentic ReAct loop over the agent's full toolset",
+      "hops": null
+    },
+    {
+      "id": "onboarding:synthesize",
+      "name": "synthesize",
+      "lobes": [
+        "synthesize",
+        "skill_select",
+        "skill_active",
+        "session_recall",
+        "task_state",
+        "memory_recall"
+      ],
+      "loop": "agentic",
+      "tools": [
+        "admin.overview",
+        "admin.configure_channel",
+        "admin.list_rules",
+        "admin.upsert_rule",
+        "admin.delete_rule",
+        "admin.update_persona",
+        "tasks.create",
+        "tasks.list",
+        "tasks.update",
+        "tasks.cancel",
+        "memory",
+        "kb.retrieve",
+        "kb.read_chunk",
+        "search_golden"
+      ],
+      "fanout_key": "",
+      "description": "onboarding: steward mode — configure the bot + remember facts",
+      "hops": null
+    }
+  ]
+}

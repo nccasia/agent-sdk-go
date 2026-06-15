@@ -17,9 +17,9 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] stage → engine.Stage (builder)
 - [ ] Flow → flows.Flow
 - [ ] flow → flows.NewFlow
-- [ ] Flows → preact.Flows
-- [ ] Lobes → preact.Lobes
-- [ ] Stages → preact.Stages
+- [x] Flows → preact.Flows
+- [x] Lobes → preact.Lobes
+- [x] Stages → preact.Stages
 - [ ] Skill → skills.Skill
 - [ ] Session → session.Session
 - [ ] SessionState → session.SessionState
@@ -84,9 +84,9 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] Final → events.Final
 
 ## Framework primitives — _blocks (rung 01–08)
-- [ ] Lobe → lobes.Lobe
+- [x] Lobe → lobes.Lobe
 - [x] LobeSpec → core/spec.Lobe
-- [ ] LobeRegistry → lobes.Registry
+- [x] LobeRegistry → lobes.Registry
 - [x] PathSpec → core/spec.Path
 - [x] Blackboard → core/attention.Blackboard
 - [x] ContextNode → core/attention.ContextNode

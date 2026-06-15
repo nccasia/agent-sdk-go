@@ -1,0 +1,291 @@
+[
+  {
+    "name": "empty",
+    "ctx": {},
+    "scores": {
+      "qna": 0.0,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "emergent",
+      "score": 0.0,
+      "runner_up": {
+        "name": "clarify",
+        "score": 0.0
+      },
+      "emergent": true
+    }
+  },
+  {
+    "name": "qna_question",
+    "ctx": {
+      "query": "what is the capital of France?",
+      "stages": [
+        "classify"
+      ]
+    },
+    "scores": {
+      "qna": 0.8,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "qna",
+      "score": 0.8,
+      "runner_up": {
+        "name": "clarify",
+        "score": 0.0
+      },
+      "emergent": false
+    }
+  },
+  {
+    "name": "research_compare",
+    "ctx": {
+      "query": "compare and contrast the pros and cons of microservices versus monoliths in detail for our team",
+      "stages": [
+        "classify"
+      ],
+      "route": "complex"
+    },
+    "scores": {
+      "qna": 0.0,
+      "research": 1.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "research",
+      "score": 1.0,
+      "runner_up": {
+        "name": "clarify",
+        "score": 0.0
+      },
+      "emergent": false
+    }
+  },
+  {
+    "name": "clarify_followup",
+    "ctx": {
+      "query": "what about that?",
+      "stages": [
+        "condense",
+        "classify"
+      ],
+      "has_history": true,
+      "prev_path": "qna"
+    },
+    "scores": {
+      "qna": 0.8,
+      "research": 0.0,
+      "clarify": 1.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "clarify",
+      "score": 1.0,
+      "runner_up": {
+        "name": "qna",
+        "score": 0.8
+      },
+      "emergent": false
+    }
+  },
+  {
+    "name": "relational_greeting",
+    "ctx": {
+      "query": "hello there"
+    },
+    "scores": {
+      "qna": 0.0,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.9,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "relational",
+      "score": 0.9,
+      "runner_up": {
+        "name": "clarify",
+        "score": 0.0
+      },
+      "emergent": false
+    }
+  },
+  {
+    "name": "onboarding_mode",
+    "ctx": {
+      "query": "onboarding",
+      "config_mode": true
+    },
+    "scores": {
+      "qna": 0.2,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 1.0
+    },
+    "path": {
+      "name": "onboarding",
+      "score": 1.0,
+      "runner_up": {
+        "name": "qna",
+        "score": 0.2
+      },
+      "emergent": false
+    }
+  },
+  {
+    "name": "memory_scoped",
+    "ctx": {
+      "query": "remind me",
+      "memory_enabled": true,
+      "memory_scopes": {
+        "conversation": 1
+      }
+    },
+    "scores": {
+      "qna": 0.0,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "emergent",
+      "score": 0.0,
+      "runner_up": {
+        "name": "clarify",
+        "score": 0.0
+      },
+      "emergent": true
+    }
+  },
+  {
+    "name": "skills_declared",
+    "ctx": {
+      "query": "do a thing",
+      "skills_declared": true,
+      "skills_in_use": true
+    },
+    "scores": {
+      "qna": 0.2,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "emergent",
+      "score": 0.0,
+      "runner_up": {
+        "name": "qna",
+        "score": 0.2
+      },
+      "emergent": true
+    }
+  },
+  {
+    "name": "adaptive_tools",
+    "ctx": {
+      "query": "need a tool",
+      "tool_strategy": "adaptive"
+    },
+    "scores": {
+      "qna": 0.2,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "emergent",
+      "score": 0.0,
+      "runner_up": {
+        "name": "qna",
+        "score": 0.2
+      },
+      "emergent": true
+    }
+  },
+  {
+    "name": "scope_gate",
+    "ctx": {
+      "query": "x",
+      "scope_gate": true
+    },
+    "scores": {
+      "qna": 0.2,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "emergent",
+      "score": 0.0,
+      "runner_up": {
+        "name": "qna",
+        "score": 0.2
+      },
+      "emergent": true
+    }
+  },
+  {
+    "name": "fixed_format",
+    "ctx": {
+      "query": "format this",
+      "fixed_format": true
+    },
+    "scores": {
+      "qna": 0.2,
+      "research": 0.0,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "emergent",
+      "score": 0.0,
+      "runner_up": {
+        "name": "qna",
+        "score": 0.2
+      },
+      "emergent": true
+    }
+  },
+  {
+    "name": "complex_route_with_stage",
+    "ctx": {
+      "query": "analyze everything in great depth across many dimensions and produce a comprehensive structured report",
+      "stages": [
+        "classify"
+      ],
+      "route": "complex"
+    },
+    "scores": {
+      "qna": 0.0,
+      "research": 0.7,
+      "clarify": 0.0,
+      "relational": 0.0,
+      "onboarding": 0.0
+    },
+    "path": {
+      "name": "research",
+      "score": 0.7,
+      "runner_up": {
+        "name": "clarify",
+        "score": 0.0
+      },
+      "emergent": false
+    }
+  }
+]
