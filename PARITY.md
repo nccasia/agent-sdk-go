@@ -12,11 +12,11 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] Engine → engine.Engine
 - [x] Activable → activable.Activable
 - [x] Layer → activable.Layer
-- [ ] Stage → engine.Stage
-- [ ] StageRegistry → engine.StageRegistry
-- [ ] stage → engine.Stage (builder)
-- [ ] Flow → flows.Flow
-- [ ] flow → flows.NewFlow
+- [x] Stage → engine.Stage
+- [x] StageRegistry → engine.StageRegistry
+- [x] stage → engine.NewStage (builder)
+- [x] Flow → flows.Flow
+- [x] flow → flows.NewFlow
 - [x] Flows → preact.Flows
 - [x] Lobes → preact.Lobes
 - [x] Stages → preact.Stages
