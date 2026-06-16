@@ -8,8 +8,8 @@ while any box is unchecked (the production-ready gateway gate).
 Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 
 ## Façade (rung 01–10)
-- [ ] PreactAgent → agent.PreactAgent
-- [ ] Engine → engine.Engine
+- [x] PreactAgent → agent.PreactAgent
+- [x] Engine → engine.Engine (runnable façade engine)
 - [x] Activable → activable.Activable
 - [x] Layer → activable.Layer
 - [x] Stage → engine.Stage
@@ -55,7 +55,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [ ] probe → probe.Probe
 - [ ] ProbeRecord → probe.Record
 - [x] DocWriteGuard → react.DocWriteGuard
-- [ ] DocGroundingGuard → react.DocGroundingGuard
+- [x] DocGroundingGuard → react.DocGroundingGuard
 - [ ] render_html → report.RenderHTML
 - [ ] write_html → report.WriteHTML
 - [ ] render_viewer_html → viewer.RenderHTML

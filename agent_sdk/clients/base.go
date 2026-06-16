@@ -164,6 +164,12 @@ func MakeClient(spec any) LlmCall {
 	return c
 }
 
+// MakeClientErr is the error-returning public form (callers that want to
+// surface the resolution error rather than panic on bad input).
+func MakeClientErr(spec any) (LlmCall, error) {
+	return makeClient(spec)
+}
+
 // envFirst returns the first non-empty environment variable from the given
 // names; mirrors the Python `_env` helper.
 func envFirst(names ...string) string {
