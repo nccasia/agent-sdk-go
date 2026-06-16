@@ -45,7 +45,8 @@ is green and exits 0: each bench reproduces its Python source-of-truth verdict.
   agent facade, probe/bench/report/viewer).
 - `cmd/parity` — the export parity gate (reads `PARITY.md`, the `__all__` ledger).
 - `cmd/bench` — the free-benchmark runner (READY gate).
-- `benchmarks/`, `examples/` — the remaining rungs (14, 15).
+- `benchmarks/` — the 12 ported bench suites (rung 14) behind the free-gate;
+  `examples/` — the runnable coding-agent + subagents-analytics demos (rung 15).
 - `tasks/` — the **porting ladder**: one `TASK.md` rung per subsystem,
   dependency-ordered, each gated by exit-0 `go test` checks (Converge format).
 - `.claude/workflows/` — the Workflow-tool drivers that walk the ladder.
