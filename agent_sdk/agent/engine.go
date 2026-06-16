@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -189,53 +190,79 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 	usage := result.Usage{}
 	llmCalls := []map[string]any{}
 	stageOrder := flow.Stages
+	// notes carries each stage's final text forward, tagged "[stage]", so a
+	// later stage's system prompt sees earlier stages' conclusions (the
+	// Python engine's compression-invariant cross-stage notes channel).
+	notes := []string{}
 	for _, sid := range stageOrder {
-		_ = stageRegistry.Get(sid) // resolved per-stage
+		st := stageRegistry.Get(sid)
 		out = append(out, events.Stamp(&events.StageStart{Flow: flow.ID(), Stage: sid}, traceID))
 		steps := []map[string]any{}
-		// Make the LLM call for this stage.
-		messages := buildMessages(req.Query, req.State, e.ShareHistory)
-		system := e.composeSystem(sid)
+		baseSystem := e.composeSystem(sid)
+		system := composeSystemWithNotes(baseSystem, notes)
 		tools := e.toolSpecs()
-		msg, err := e.callLLM(ctx, sid, system, messages, tools)
-		if err != nil {
-			return nil, err
+		// Agentic stages loop over hops: call → dispatch tools → feed the
+		// results back → recall, until the model answers with no tool calls or
+		// the hop budget is spent. Non-agentic (single) stages run one call.
+		maxHops := 1
+		if stageLoop(st) == "agentic" {
+			maxHops = stageHops(st, 6)
 		}
-		if msg.Usage.InputTokens > 0 || msg.Usage.OutputTokens > 0 {
-			usage = usageFromProvider(usage, msg.Usage)
-		}
-		// Record the LLM call onto the trace so the viewer/probe prompt
-		// panels can surface it (Python engine accumulates trace.llm_calls).
-		llmCalls = append(llmCalls, map[string]any{
-			"stage":    sid,
-			"flow":     flow.ID(),
-			"system":   system,
-			"messages": messages,
-			"response": msg.Text(),
-			"usage": map[string]any{
-				"input_tokens":  msg.Usage.InputTokens,
-				"output_tokens": msg.Usage.OutputTokens,
-			},
-		})
-		// 3) Process tool calls.
-		for _, tu := range msg.ToolUses() {
-			toolCalls = append(toolCalls, tu.Name)
-			out = append(out, events.Stamp(&events.ToolCall{ID: tu.ID, Name: tu.Name, Input: tu.Input}, traceID))
-			if msg, _ := e.runToolFilters(sid, tu); msg != "" {
-				// short-circuit with the filter's message
-				out = append(out, events.Stamp(&events.ToolResult{ID: tu.ID, Name: tu.Name, Output: msg}, traceID))
-				continue
+		messages := buildMessages(req.Query, req.State, e.ShareHistory)
+		stageText := ""
+		for hop := 0; hop < maxHops; hop++ {
+			msg, err := e.callLLM(ctx, sid, system, messages, tools)
+			if err != nil {
+				return nil, err
 			}
-			out, memoryUpdates = e.dispatchTool(ctx, tu, citations, out, traceID, memoryUpdates)
+			if msg.Usage.InputTokens > 0 || msg.Usage.OutputTokens > 0 {
+				usage = usageFromProvider(usage, msg.Usage)
+			}
+			llmCalls = append(llmCalls, map[string]any{
+				"stage":    sid,
+				"flow":     flow.ID(),
+				"system":   system,
+				"messages": messages,
+				"response": msg.Text(),
+				"usage": map[string]any{
+					"input_tokens":  msg.Usage.InputTokens,
+					"output_tokens": msg.Usage.OutputTokens,
+				},
+			})
+			// Collect any text on this hop.
+			if text := msg.Text(); text != "" {
+				steps = append(steps, map[string]any{"kind": "answer", "text": text})
+				stageText = text
+				finalAnswer = text
+				out = append(out, events.Stamp(&events.TextDelta{Text: text}, traceID))
+			}
+			toolUses := msg.ToolUses()
+			if len(toolUses) == 0 {
+				break
+			}
+			// Append the assistant's tool_use turn, then dispatch each tool and
+			// feed back a user turn carrying the tool_result blocks.
+			messages = append(messages, assistantToolUseMessage(msg))
+			resultBlocks := []any{}
+			for _, tu := range toolUses {
+				toolCalls = append(toolCalls, tu.Name)
+				steps = append(steps, map[string]any{
+					"kind": "tool_use", "name": tu.Name, "input": tu.Input,
+				})
+				out = append(out, events.Stamp(&events.ToolCall{ID: tu.ID, Name: tu.Name, Input: tu.Input}, traceID))
+				if filtered, _ := e.runToolFilters(sid, tu); filtered != "" {
+					out = append(out, events.Stamp(&events.ToolResult{ID: tu.ID, Name: tu.Name, Output: filtered}, traceID))
+					resultBlocks = append(resultBlocks, toolResultBlock(tu.ID, filtered))
+					continue
+				}
+				var output string
+				out, output, memoryUpdates = e.dispatchToolWithOutput(ctx, tu, citations, out, traceID, memoryUpdates)
+				resultBlocks = append(resultBlocks, toolResultBlock(tu.ID, output))
+			}
+			messages = append(messages, map[string]any{"role": "user", "content": resultBlocks})
 		}
-		// 4) Collect text answer.
-		text := msg.Text()
-		if text != "" {
-			steps = append(steps, map[string]any{"kind": "answer", "text": text})
-			finalAnswer = text
-			// Emit a text-delta so the AgentStream.TextStream() channel
-			// surfaces the answer (matches the Python engine.stream behavior).
-			out = append(out, events.Stamp(&events.TextDelta{Text: text}, traceID))
+		if stageText != "" {
+			notes = append(notes, "["+sid+"] "+stageText)
 		}
 		out = append(out, events.Stamp(&events.StageEnd{Flow: flow.ID(), Stage: sid, Usage: usage}, traceID))
 		flowStages = append(flowStages, map[string]any{
@@ -283,6 +310,75 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 	}
 	out = append(out, events.Stamp(&events.Final{Result: res}, traceID))
 	return &RunResult{Result: res, Events: out, State: req.State, Trace: res.Trace}, nil
+}
+
+// composeSystemWithNotes appends a "[Notes gathered this turn]" section
+// carrying each prior stage's tagged conclusion so the current stage builds on
+// them (the Python engine's cross-stage notes channel). No notes ⇒ unchanged.
+func composeSystemWithNotes(system string, notes []string) string {
+	if len(notes) == 0 {
+		return system
+	}
+	return system + "\n\n[Notes gathered this turn]\n" + strings.Join(notes, "\n")
+}
+
+// assistantToolUseMessage renders the model's tool_use turn as a message map so
+// it can be appended to the running conversation between hops.
+func assistantToolUseMessage(msg clients.Message) map[string]any {
+	content := []any{}
+	if text := msg.Text(); text != "" {
+		content = append(content, map[string]any{"type": "text", "text": text})
+	}
+	for _, tu := range msg.ToolUses() {
+		content = append(content, map[string]any{
+			"type": "tool_use", "id": tu.ID, "name": tu.Name, "input": tu.Input,
+		})
+	}
+	return map[string]any{"role": "assistant", "content": content}
+}
+
+// toolResultBlock renders one tool_result content block.
+func toolResultBlock(id, output string) map[string]any {
+	return map[string]any{"type": "tool_result", "tool_use_id": id, "content": output}
+}
+
+// dispatchToolWithOutput is dispatchTool that also returns the tool's output
+// text (so the agentic loop can feed it back to the model).
+func (e *Engine) dispatchToolWithOutput(
+	ctx context.Context, tu clients.ToolUseBlock,
+	citations []contracts.Citation,
+	out []events.AgentEvent, traceID string,
+	updates []result.MemoryUpdate,
+) ([]events.AgentEvent, string, []result.MemoryUpdate) {
+	if tu.Name == "memory" {
+		updates = append(updates, result.MemoryUpdate{
+			Action: asString(tu.Input["action"]),
+			Scope:  asString(tu.Input["scope"]),
+			Key:    asString(tu.Input["key"]),
+		})
+	}
+	if e.Tools == nil {
+		msg := "no tools available"
+		out = append(out, events.Stamp(&events.ToolResult{ID: tu.ID, Name: tu.Name, Output: msg}, traceID))
+		return out, msg, updates
+	}
+	rt, ok := e.Tools.(contracts.ToolRuntime)
+	if !ok {
+		msg := "tool runtime unavailable"
+		out = append(out, events.Stamp(&events.ToolResult{ID: tu.ID, Name: tu.Name, Output: msg}, traceID))
+		return out, msg, updates
+	}
+	output, _ := rt.CallTool(ctx, tu.Name, tu.Input, nil, map[string]struct{}{})
+	out = append(out, events.Stamp(&events.ToolResult{ID: tu.ID, Name: tu.Name, Output: output}, traceID))
+	for _, hook := range e.ToolResultHooks {
+		if hook == nil {
+			continue
+		}
+		for _, c := range hook(tu.Name, output) {
+			citations = append(citations, c)
+		}
+	}
+	return out, output, updates
 }
 
 // dispatchTool runs a tool call (after the filters) and appends the
@@ -498,6 +594,53 @@ func stageID(s any) string {
 		}
 	}
 	return ""
+}
+
+// stageLoop returns the stage's loop mode ("single"/"agentic"/…); "" when
+// unknown (treated as a single call).
+func stageLoop(st any) string {
+	switch v := st.(type) {
+	case spec.Stage:
+		return v.Loop
+	case *spec.Stage:
+		if v != nil {
+			return v.Loop
+		}
+	case flows.FlowStep:
+		return v.Loop
+	case *flows.FlowStep:
+		if v != nil {
+			return v.Loop
+		}
+	case map[string]any:
+		if l, ok := v["loop"].(string); ok {
+			return l
+		}
+	}
+	return ""
+}
+
+// stageHops returns the stage's per-stage hop budget; def when unset.
+func stageHops(st any, def int) int {
+	switch v := st.(type) {
+	case spec.Stage:
+		if v.Hops != nil {
+			return *v.Hops
+		}
+	case *spec.Stage:
+		if v != nil && v.Hops != nil {
+			return *v.Hops
+		}
+	case flows.FlowStep:
+		if v.Hops != nil {
+			return *v.Hops
+		}
+	case *flows.FlowStep:
+		if v != nil && v.Hops != nil {
+			return *v.Hops
+		}
+	}
+	return def
 }
 
 // StageRegistryLite is a minimal id → stage lookup the engine builds from the
