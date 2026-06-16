@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
 )
 
 // SpecVersion is the serialized spec schema version.

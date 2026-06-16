@@ -1,8 +1,8 @@
 package codingagent
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/lobes"
 )
 
 func always(map[string]any) float64 { return 1.0 }

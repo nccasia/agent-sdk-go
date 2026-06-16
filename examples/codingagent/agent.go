@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/memory"
-	"github.com/mezon/agent-sdk-go/agent_sdk/react"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/memory"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/react"
 )
 
 // Instructions states the workflow, not the tool mechanics (the tools are

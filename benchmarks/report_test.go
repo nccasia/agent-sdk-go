@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // TestWriteReportsOnePerBenchPlusIndex asserts WriteReports writes one HTML per

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/inspection"
-	mc "github.com/mezon/agent-sdk-go/agent_sdk/metacognition"
-	mcplugin "github.com/mezon/agent-sdk-go/agent_sdk/plugins/metacognition"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/inspection"
+	mc "github.com/nccasia/agent-sdk-go/agent_sdk/metacognition"
+	mcplugin "github.com/nccasia/agent-sdk-go/agent_sdk/plugins/metacognition"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // corgictionbech — the deterministic gate for the SDK's METACOGNITION layer.

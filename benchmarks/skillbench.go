@@ -10,10 +10,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
-	"github.com/mezon/agent-sdk-go/agent_sdk/skills"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/skills"
 )
 
 // skillbench — the LIVE bench for the SDK's skill system. It drives the REAL

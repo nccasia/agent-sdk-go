@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/memory"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/memory"
 )
 
 // TurnKey is the goroutine-local key for the active turn (mirrors

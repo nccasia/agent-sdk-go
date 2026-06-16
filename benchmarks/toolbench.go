@@ -6,12 +6,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
-	"github.com/mezon/agent-sdk-go/agent_sdk/mcp"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
-	"github.com/mezon/agent-sdk-go/agent_sdk/tools"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/mcp"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/tools"
 )
 
 // toolbench — the bench for the SDK's TOOL-USE concepts. Certifies @tool spec

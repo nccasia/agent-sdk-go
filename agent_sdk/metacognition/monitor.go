@@ -3,7 +3,7 @@ package metacognition
 import (
 	"fmt"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/inspection"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/inspection"
 )
 
 // MonitorInput carries the optional OX/OY snapshots Monitor observes. A nil

@@ -12,14 +12,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/preact"
-	"github.com/mezon/agent-sdk-go/agent_sdk/result"
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
-	"github.com/mezon/agent-sdk-go/agent_sdk/stores/memory"
-	"github.com/mezon/agent-sdk-go/agent_sdk/tools"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/preact"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/result"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/stores/memory"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/tools"
 )
 
 // minSet mirrors the Python _MIN = dict(lobes=Lobes.minimal(), …) used to

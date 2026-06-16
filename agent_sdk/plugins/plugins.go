@@ -18,20 +18,20 @@
 package plugins
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/format"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/metacognition"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/rag"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/safety"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/support_triage"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/tasks"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/format"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/metacognition"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/rag"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/safety"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/support_triage"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/tasks"
 )
 
 // Re-exports of the parent agent package so callers can
-// `import "github.com/mezon/agent-sdk-go/agent_sdk/plugins"` and get the
+// `import "github.com/nccasia/agent-sdk-go/agent_sdk/plugins"` and get the
 // full control surface (mirrors `from agent_sdk.plugins import …` in
 // Python).
 type (

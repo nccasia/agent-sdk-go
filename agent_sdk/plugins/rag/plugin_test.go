@@ -4,8 +4,8 @@ package rag
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
 )
 
 // TestDefaultAgentHasSafetyNotGrounding mirrors test_default_agent_has_safety_not_grounding.

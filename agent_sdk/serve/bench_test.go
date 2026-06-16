@@ -8,8 +8,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
 )
 
 // BenchmarkInProcessQueueEnqueue measures the cost of pushing a Job onto

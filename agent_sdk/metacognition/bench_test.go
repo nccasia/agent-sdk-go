@@ -3,7 +3,7 @@ package metacognition
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/inspection"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/inspection"
 )
 
 // monitor → regulate is the per-step hot path the engine runs every stage.

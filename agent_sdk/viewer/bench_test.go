@@ -3,7 +3,7 @@ package viewer
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 func sampleProbe() *probe.Record {

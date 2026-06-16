@@ -8,7 +8,7 @@ package skills
 import (
 	"fmt"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/signal"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/signal"
 )
 
 // Skill is the authoring façade — procedural knowledge, progressively disclosed.

@@ -8,9 +8,9 @@ import (
 	"math"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/tasks"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/tasks"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // delegationbench — the LIVE benchmark for plan-driven fan-out (docs 08/12). On

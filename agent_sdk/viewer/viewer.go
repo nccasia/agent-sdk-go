@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 //go:embed assets/viewer.html

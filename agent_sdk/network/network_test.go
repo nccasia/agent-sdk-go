@@ -9,8 +9,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/activate"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/feature"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/activate"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/feature"
 )
 
 //go:embed fixtures_production.json

@@ -5,8 +5,8 @@ package tasks
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
 )
 
 // TestInstallContributesLobeStagesFlowAndOneTool mirrors

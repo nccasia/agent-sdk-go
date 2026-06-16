@@ -3,7 +3,7 @@ package subagentsanalytics
 import (
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
 )
 
 // Todo is one planned analysis — a designed pipeline step with its own prompt +

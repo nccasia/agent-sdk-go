@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/lobes"
 )
 
 // CiteLOBE is the canonical `cite` grounding lobe.

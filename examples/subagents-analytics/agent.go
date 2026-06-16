@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
 )
 
 // AnalystPrompt mirrors analytics.agent.ANALYST_PROMPT.

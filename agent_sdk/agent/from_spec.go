@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
 )
 
 // FromSpec rebuilds a working PreactAgent from a serialized Spec — the inverse

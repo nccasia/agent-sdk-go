@@ -14,9 +14,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/events"
-	"github.com/mezon/agent-sdk-go/agent_sdk/result"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/events"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/result"
 )
 
 // Record is the structured internals of one probed turn (JSON-able). Mirrors

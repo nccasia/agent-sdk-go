@@ -6,15 +6,15 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/events"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/memory"
-	"github.com/mezon/agent-sdk-go/agent_sdk/preact"
-	"github.com/mezon/agent-sdk-go/agent_sdk/result"
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
-	"github.com/mezon/agent-sdk-go/agent_sdk/tools"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/events"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/memory"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/preact"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/result"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/tools"
 )
 
 // assemble wires the agent's building blocks (lobes/stages/flows/skills/tools),

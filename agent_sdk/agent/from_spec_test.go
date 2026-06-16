@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/preact"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/preact"
 )
 
 // TestFromSpecRoundTripsDefault is the core contract: build agent A, capture

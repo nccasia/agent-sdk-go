@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	storemem "github.com/mezon/agent-sdk-go/agent_sdk/stores/memory"
+	storemem "github.com/nccasia/agent-sdk-go/agent_sdk/stores/memory"
 )
 
 // DefaultScopes are the durable scopes a Memory allows by default.

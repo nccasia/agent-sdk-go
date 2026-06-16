@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
 )
 
 // onDemandDirective is deliberately pushy AND lifecycle-teaching: a soft

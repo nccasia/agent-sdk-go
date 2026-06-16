@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
 )
 
 func TestFormatPluginLobesIsFormatOnly(t *testing.T) {

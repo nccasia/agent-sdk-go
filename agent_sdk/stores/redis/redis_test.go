@@ -12,7 +12,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
 )
 
 // fakeClient is a stand-in for go-redis that satisfies the small interface

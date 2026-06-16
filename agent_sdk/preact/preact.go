@@ -6,9 +6,9 @@
 package preact
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
-	"github.com/mezon/agent-sdk-go/agent_sdk/network"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/lobes"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/network"
 )
 
 // Lobes is the lobe-network namespace.

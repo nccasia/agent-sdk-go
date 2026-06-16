@@ -12,8 +12,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
 )
 
 // finalizeProbe is a test plugin that records what the engine hands its

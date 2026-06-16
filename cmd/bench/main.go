@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mezon/agent-sdk-go/benchmarks"
+	"github.com/nccasia/agent-sdk-go/benchmarks"
 )
 
 func main() {

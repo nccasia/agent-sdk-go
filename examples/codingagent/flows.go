@@ -1,9 +1,9 @@
 package codingagent
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/signal"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/signal"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
 )
 
 // Per-stage tool slices (Claude Code's canonical tool names). Mirror

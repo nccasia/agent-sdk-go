@@ -10,7 +10,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
 )
 
 // AgentEvent is a typed, pattern-matchable streaming event. Every event tags

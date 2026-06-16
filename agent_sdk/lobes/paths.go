@@ -1,6 +1,6 @@
 package lobes
 
-import "github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+import "github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
 
 // taskishPaths / infoishPaths — previous-turn path classes (paths/common.py).
 var infoishPaths = map[string]struct{}{"qna": {}, "research": {}, "clarify": {}}

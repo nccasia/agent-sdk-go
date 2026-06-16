@@ -1,7 +1,7 @@
 package codingagent
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
 )
 
 // Initial sandbox contents (the demo/test writes these to a temp dir). Mirror

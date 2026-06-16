@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // attentionbench — the bench for the SDK's CONTEXT axis (OY: what the agent

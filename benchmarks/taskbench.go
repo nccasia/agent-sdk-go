@@ -12,10 +12,10 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/tasks"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
-	"github.com/mezon/agent-sdk-go/agent_sdk/tools"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/tasks"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/tools"
 )
 
 // taskbench — can the SDK drive a LIVE model to PLAN and SOLVE realistic

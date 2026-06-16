@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/events"
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
-	"github.com/mezon/agent-sdk-go/agent_sdk/stores/memory"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/events"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/stores/memory"
 )
 
 // _agent mirrors the Python _agent helper: a PreactAgent driven by a

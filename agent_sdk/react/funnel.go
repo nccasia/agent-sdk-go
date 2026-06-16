@@ -17,7 +17,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
 )
 
 // SpentMarker prefixes a demoted (funneled-out) observation hint. Re-tiering an

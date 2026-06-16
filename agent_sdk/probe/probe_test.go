@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/engine"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/skills"
-	"github.com/mezon/agent-sdk-go/agent_sdk/tools"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/engine"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/skills"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/tools"
 )
 
 // scriptAgent builds a PreactAgent with the given FakeClient script.

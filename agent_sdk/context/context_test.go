@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/memory"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/memory"
 )
 
 func ctxWithMemory() *AgentContext {

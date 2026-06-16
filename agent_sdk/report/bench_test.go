@@ -3,9 +3,9 @@ package report
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/bench"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
-	"github.com/mezon/agent-sdk-go/agent_sdk/result"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/bench"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/result"
 )
 
 // sampleProbe builds a synthetic probe record (no agent dependency) so the

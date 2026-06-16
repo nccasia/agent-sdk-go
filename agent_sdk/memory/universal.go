@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
-	"github.com/mezon/agent-sdk-go/agent_sdk/react"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/react"
 )
 
 // FlashScope is the turn-scoped (in-RAM, dropped at turn end) tier.

@@ -24,9 +24,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/events"
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/events"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
 )
 
 // Job is one unit of work the worker drains from a Queue. The worker

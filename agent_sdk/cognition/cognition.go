@@ -6,8 +6,8 @@
 package cognition
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/lobes"
 )
 
 // System prompts — the answer-composition / routing copy each lobe owns. Kept

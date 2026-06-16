@@ -3,7 +3,7 @@ package metacognition
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/inspection"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/inspection"
 )
 
 func deref(p *string) string {

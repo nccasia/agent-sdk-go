@@ -21,8 +21,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/result"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/result"
 )
 
 // Scenario is one routing/behavior assertion. Mirrors agent_sdk/bench.py:Scenario.

@@ -9,9 +9,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/engine"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/engine"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
 )
 
 // stabRank mirrors the Python _STAB_RANK ordering (stable < slow < turn <

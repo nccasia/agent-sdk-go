@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/result"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/result"
 )
 
 // Vec is a dense embedding vector (float32, as numpy float32 in Python).

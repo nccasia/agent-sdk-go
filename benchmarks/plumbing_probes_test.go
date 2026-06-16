@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // populated asserts a probe record carries a real, non-empty trace (a flow name

@@ -13,9 +13,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/feature"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/signal"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/feature"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/signal"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
 )
 
 // MergeLobeWeights returns defaults with a sparse per-bot override applied —

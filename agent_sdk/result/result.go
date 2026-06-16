@@ -8,7 +8,7 @@ package result
 import (
 	"math"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
 )
 
 // DefaultCostPerMTok is the rough $/Mtok default (input, output) — overridable;

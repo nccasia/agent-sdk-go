@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
 )
 
 func summarizer(turns []session.Turn) (string, error) {

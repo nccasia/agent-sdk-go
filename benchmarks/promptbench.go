@@ -6,13 +6,13 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
-	"github.com/mezon/agent-sdk-go/agent_sdk/cognition"
-	"github.com/mezon/agent-sdk-go/agent_sdk/expression"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/format"
-	"github.com/mezon/agent-sdk-go/agent_sdk/plugins/safety"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/cognition"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/expression"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/format"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/plugins/safety"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // promptbench — the gate for the SDK's PROMPTS: are they well-structured AND

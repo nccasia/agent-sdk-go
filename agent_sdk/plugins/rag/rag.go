@@ -3,8 +3,8 @@
 package rag
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
 )
 
 // FinalizeGrounding is the canonical finalize hook a RAG/grounding

@@ -3,7 +3,7 @@ package cognition
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
 )
 
 func TestCognitionLobeMetadata(t *testing.T) {

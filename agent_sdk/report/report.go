@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/bench"
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/bench"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
 )
 
 // Report is the bench scorecard half of the render. It mirrors

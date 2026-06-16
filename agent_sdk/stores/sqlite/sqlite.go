@@ -12,7 +12,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/session"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/session"
 	_ "modernc.org/sqlite"
 )
 

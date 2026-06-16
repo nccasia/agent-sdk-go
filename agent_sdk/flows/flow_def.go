@@ -7,7 +7,7 @@
 // Ported from agent_sdk/flow_def.py (Flow, flow).
 package flows
 
-import "github.com/mezon/agent-sdk-go/agent_sdk/core/signal"
+import "github.com/nccasia/agent-sdk-go/agent_sdk/core/signal"
 
 // SignalFn is a deterministic, free recognition score in [0, 1].
 type SignalFn func(ctx map[string]any) float64

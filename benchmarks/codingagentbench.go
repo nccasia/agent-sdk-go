@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
-	codingagent "github.com/mezon/agent-sdk-go/examples/codingagent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/probe"
+	codingagent "github.com/nccasia/agent-sdk-go/examples/codingagent"
 )
 
 // codingagentbench — the codebase-understanding stress test for the SDK. The

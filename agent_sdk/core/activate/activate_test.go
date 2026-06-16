@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/feature"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/feature"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
 )
 
 func lobe(id string, layer int, mut func(*spec.Lobe)) spec.Lobe {

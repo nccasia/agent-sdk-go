@@ -1,4 +1,4 @@
-module github.com/mezon/agent-sdk-go
+module github.com/nccasia/agent-sdk-go
 
 go 1.25.0
 

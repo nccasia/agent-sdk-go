@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
 )
 
 // BenchmarkQueryOneShot measures a single PreactAgent.Query against a

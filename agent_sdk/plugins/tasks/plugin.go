@@ -1,8 +1,8 @@
 package tasks
 
 import (
-	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
 )
 
 // TaskAgentSetup is the type alias the plugin uses when installing.

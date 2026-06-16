@@ -1,6 +1,6 @@
 package lobes
 
-import "github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
+import "github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
 
 // Lobe is the skill-style authoring API for a lobe — one self-describing value
 // instead of a spec.Lobe + a separate signals function + weights + a magic

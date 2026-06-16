@@ -3,9 +3,9 @@ package tools
 import (
 	"math"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/lobes"
 )
 
 // ToolSelectLobe is the activation-only control lobe that adaptively exposes only

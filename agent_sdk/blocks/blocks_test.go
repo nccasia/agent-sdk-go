@@ -6,17 +6,17 @@ package blocks
 import (
 	"testing"
 
-	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/activate"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/feature"
-	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
-	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
-	"github.com/mezon/agent-sdk-go/agent_sdk/inspection"
-	"github.com/mezon/agent-sdk-go/agent_sdk/lobes"
-	"github.com/mezon/agent-sdk-go/agent_sdk/metacognition"
-	"github.com/mezon/agent-sdk-go/agent_sdk/react"
-	"github.com/mezon/agent-sdk-go/agent_sdk/skills"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/contracts"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/activate"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/feature"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/core/spec"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/flows"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/inspection"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/lobes"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/metacognition"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/react"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/skills"
 )
 
 // TestContractsReexported: the contracts primitives are wired through blocks.
