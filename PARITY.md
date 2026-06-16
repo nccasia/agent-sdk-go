@@ -48,19 +48,19 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] eval_signal → core/signal.Eval
 
 ## Benchmark / probe / report (rung 13)
-- [ ] Harness → bench.Harness
-- [ ] Scenario → bench.Scenario
-- [ ] ScenarioResult → bench.ScenarioResult
-- [ ] Report → bench.Report
-- [ ] probe → probe.Probe
-- [ ] ProbeRecord → probe.Record
+- [x] Harness → bench.Harness
+- [x] Scenario → bench.Scenario
+- [x] ScenarioResult → bench.ScenarioResult
+- [x] Report → bench.Report
+- [x] probe → probe.Probe
+- [x] ProbeRecord → probe.Record
 - [x] DocWriteGuard → react.DocWriteGuard
 - [x] DocGroundingGuard → react.DocGroundingGuard
-- [ ] render_html → report.RenderHTML
-- [ ] write_html → report.WriteHTML
-- [ ] render_viewer_html → viewer.RenderHTML
-- [ ] write_viewer → viewer.Write
-- [ ] to_viewer_record → viewer.ToRecord
+- [x] render_html → report.RenderHTML
+- [x] write_html → report.WriteHTML
+- [x] render_viewer_html → viewer.RenderHTML
+- [x] write_viewer → viewer.Write
+- [x] to_viewer_record → viewer.ToRecord
 
 ## Results + events (rung 03)
 - [x] AgentResult → result.AgentResult

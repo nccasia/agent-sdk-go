@@ -8,10 +8,12 @@ import (
 
 	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
 	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
+	"github.com/mezon/agent-sdk-go/agent_sdk/core/activate"
 	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
 	"github.com/mezon/agent-sdk-go/agent_sdk/events"
 	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
 	"github.com/mezon/agent-sdk-go/agent_sdk/metacognition"
+	"github.com/mezon/agent-sdk-go/agent_sdk/network"
 	"github.com/mezon/agent-sdk-go/agent_sdk/result"
 	"github.com/mezon/agent-sdk-go/agent_sdk/session"
 )
@@ -117,19 +119,7 @@ func (e *Engine) Inspect(query string) result.ActivationSnapshot {
 		resolved = map[string]any{"name": bestName, "score": bestScore}
 	}
 	flow := e.selectFlow(resolved)
-	lobeRows := make([]map[string]any, 0, len(e.Lobes))
-	for _, l := range e.Lobes {
-		score := 0.0
-		if l.Signals != nil {
-			for _, v := range l.Signals(ctx) {
-				score += v
-			}
-		}
-		lobeRows = append(lobeRows, map[string]any{
-			"id": l.ID, "layer": l.Layer, "activated": score > l.MinActivation,
-			"score": score, "reason": "",
-		})
-	}
+	lobeRows := e.resolveLobeRows(ctx)
 	flowNames := []string{}
 	if flow != nil {
 		for _, sid := range flow.Stages {
@@ -197,6 +187,7 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 	refusal := (*result.Refusal)(nil)
 	memoryUpdates := []result.MemoryUpdate{}
 	usage := result.Usage{}
+	llmCalls := []map[string]any{}
 	stageOrder := flow.Stages
 	for _, sid := range stageOrder {
 		_ = stageRegistry.Get(sid) // resolved per-stage
@@ -213,6 +204,19 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 		if msg.Usage.InputTokens > 0 || msg.Usage.OutputTokens > 0 {
 			usage = usageFromProvider(usage, msg.Usage)
 		}
+		// Record the LLM call onto the trace so the viewer/probe prompt
+		// panels can surface it (Python engine accumulates trace.llm_calls).
+		llmCalls = append(llmCalls, map[string]any{
+			"stage":    sid,
+			"flow":     flow.ID(),
+			"system":   system,
+			"messages": messages,
+			"response": msg.Text(),
+			"usage": map[string]any{
+				"input_tokens":  msg.Usage.InputTokens,
+				"output_tokens": msg.Usage.OutputTokens,
+			},
+		})
 		// 3) Process tool calls.
 		for _, tu := range msg.ToolUses() {
 			toolCalls = append(toolCalls, tu.Name)
@@ -236,6 +240,7 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 		out = append(out, events.Stamp(&events.StageEnd{Flow: flow.ID(), Stage: sid, Usage: usage}, traceID))
 		flowStages = append(flowStages, map[string]any{
 			"flow": flow.ID(), "stage": sid, "steps": steps, "skipped": false,
+			"system_prompt": system,
 		})
 	}
 	// 5) Finalize hooks: rewrite answer / augment citations / force refusal.
@@ -266,10 +271,15 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 	} else {
 		res.Status = "answered"
 	}
+	// Lobe activation rows for the trace (same network propagation as
+	// Inspect): the probe/viewer read trace.lobes to list activated lobes.
+	lobeRows := e.resolveLobeRows(pathCtx)
 	res.Trace = result.Trace{
 		TraceID:    traceID,
 		Path:       path,
+		Lobes:      lobeRows,
 		FlowStages: flowStages,
+		LlmCalls:   llmCalls,
 	}
 	out = append(out, events.Stamp(&events.Final{Result: res}, traceID))
 	return &RunResult{Result: res, Events: out, State: req.State, Trace: res.Trace}, nil
@@ -360,6 +370,26 @@ func (e *Engine) toolSpecs() []map[string]any {
 		return nil
 	}
 	return rt.GetToolSpecs()
+}
+
+// resolveLobeRows runs the production network propagation for the turn and
+// returns the trace.lobes rows (id/layer/activated/score/reason). Activation
+// is path-biased: a recognized path nudges its member lobes above threshold,
+// so e.g. the qna/research paths activate `synthesize`. Mirrors the Python
+// engine attaching trace.lobes from network.propagate.
+func (e *Engine) resolveLobeRows(ctx map[string]any) []map[string]any {
+	res, err := activate.Propagate(e.Lobes, ctx, network.DefaultWeights(), activate.PropagateOptions{Paths: e.Paths})
+	if err != nil {
+		return []map[string]any{}
+	}
+	rows := make([]map[string]any, 0, len(res.Lobes))
+	for _, l := range res.Lobes {
+		rows = append(rows, map[string]any{
+			"id": l.ID, "layer": l.Layer, "activated": l.Activated,
+			"score": l.Activation, "reason": l.Reason,
+		})
+	}
+	return rows
 }
 
 func (e *Engine) composeSystem(stage string) string {

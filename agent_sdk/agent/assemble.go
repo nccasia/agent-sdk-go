@@ -71,8 +71,13 @@ func (a *PreactAgent) assemble() error {
 				resolvedPaths = append(resolvedPaths, p)
 			}
 			// Plugin-contributed flows also generate paths so the
-			// engine's intent recognizer can route to them.
-			for _, f := range resolvedFlows {
+			// engine's intent recognizer can route to them. Only the
+			// plugin flows (setup.Flows) derive paths — deriving from the
+			// default flows too would re-register qna/research/... and
+			// overwrite the production recognizer scores by name, collapsing
+			// every route to "emergent" (matches Python agent.py: the
+			// default network ignores flow-derived paths).
+			for _, f := range setup.Flows {
 				resolvedPaths = append(resolvedPaths, derivePathFromFlow(f))
 			}
 			a.paths = filterRemovedPaths(resolvedPaths, setup.RemovedPaths)
@@ -86,8 +91,9 @@ func (a *PreactAgent) assemble() error {
 	} else {
 		if cfg.Flows == nil {
 			resolvedPaths := defaultPathSpecs()
-			// Plugin-contributed flows generate paths.
-			for _, f := range resolvedFlows {
+			// Plugin-contributed flows generate paths. Only setup.Flows
+			// (not the default flows in resolvedFlows) — see the note above.
+			for _, f := range setup.Flows {
 				resolvedPaths = append(resolvedPaths, derivePathFromFlow(f))
 			}
 			a.paths = filterRemovedPaths(resolvedPaths, setup.RemovedPaths)
