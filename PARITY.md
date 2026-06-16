@@ -1,4 +1,4 @@
-# API parity ledger — `agent_sdk.__all__` (82 exports)
+# API parity ledger — `agent_sdk.__all__` (116 exports)
 
 The 100%-API-parity contract. Each line maps a Python public export to its Go
 equivalent. A rung checks `[x]` an export once it exists in Go with a matching
@@ -141,6 +141,8 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 
 ## Benchmarks / verdict / ratchet (rung 14)
 Bench types power the gates (no `__all__` entries in the Python `_shared`).
+These rows track bench-port progress only; `cmd/parity` stops at this heading and
+does NOT count them toward the 116-export gate.
 - [x] compose_verdict → benchmarks.ComposeVerdict (+ Verdict{Status, Gates})
 - [x] _payload → benchmarks.NewPayload (ModePayload{Checks, AllPass, Metrics})
 - [x] verdict_summary → benchmarks.VerdictSummary (Summary{Status, GatesPass, GatesTotal})
