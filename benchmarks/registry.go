@@ -2,7 +2,15 @@ package benchmarks
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"html"
+	"os"
+	"path/filepath"
 	"sort"
+
+	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
+	"github.com/mezon/agent-sdk-go/agent_sdk/viewer"
 )
 
 // Tier classifies a bench: Free benches are fully deterministic (no provider)
@@ -34,6 +42,10 @@ type Bench struct {
 	// without RAG), so its parity target is NOT_READY, matching ci-free-gates.sh
 	// (which gates the unit suite + statelessbench, not attentionbench).
 	ExpectStatus string
+	// Probe optionally captures real probe traces for the inspection viewer. nil
+	// ⇒ no traces are captured (the report still renders the verdict). Mirrors how
+	// the Python run.py files pass their probe records into write_viewer.
+	Probe func(ctx context.Context, model string) ([]*probe.Record, error)
 }
 
 // Registry is an ordered set of benches.
@@ -110,6 +122,132 @@ func (r *Registry) FreeGate(ctx context.Context) ([]GateRow, bool, error) {
 		rows = append(rows, GateRow{Name: b.Name, Status: v.Status, Expect: b.ExpectStatus, OK: ok})
 	}
 	return rows, allOK, nil
+}
+
+// verdictMap converts a composed Verdict to the map[string]any shape the viewer
+// (and the Python contract) consume: {status, reasons, gates, metrics}. The
+// gates carry *bool (nil = skipped); JSON round-tripping yields the same shape
+// the Python compose_verdict() emits.
+func verdictMap(v Verdict) map[string]any {
+	b, _ := json.Marshal(v)
+	var m map[string]any
+	_ = json.Unmarshal(b, &m)
+	if m == nil {
+		m = map[string]any{}
+	}
+	return m
+}
+
+// modesFromVerdict derives a per-mode rubric from a verdict's gates so the
+// viewer's Overview shows each gate's pass/fail even when a bench exposes only a
+// composed Verdict (RunFn returns no per-mode payloads). Each gate "<mode>_all_pass"
+// becomes a single-check mode {checks, all_pass, n, pass}; a nil gate (skipped)
+// is rendered as a skipped mode. Mirrors the {group: {checks,...}} modes dict.
+func modesFromVerdict(v Verdict) map[string]any {
+	modes := map[string]any{}
+	for gate, ok := range v.Gates {
+		mode := gate
+		if len(gate) > len("_all_pass") && gate[len(gate)-len("_all_pass"):] == "_all_pass" {
+			mode = gate[:len(gate)-len("_all_pass")]
+		}
+		if ok == nil {
+			modes[mode] = map[string]any{
+				"checks":      []any{},
+				"all_pass":    false,
+				"skipped":     true,
+				"skip_reason": "skipped",
+				"n":           0,
+				"pass":        0,
+			}
+			continue
+		}
+		pass := 0
+		if *ok {
+			pass = 1
+		}
+		modes[mode] = map[string]any{
+			"checks":   []any{map[string]any{"id": gate, "ok": *ok, "detail": ""}},
+			"all_pass": *ok,
+			"n":        1,
+			"pass":     pass,
+		}
+	}
+	return modes
+}
+
+// WriteReports writes one inspectable viewer HTML per bench under dir, plus an
+// index.html that links every per-bench report with its verdict badge. For each
+// bench it computes the Verdict via Run(ctx, model) and, when Probe != nil,
+// captures the bench's probe records so the viewer renders a populated
+// inspection. Returns the written paths (per-bench reports followed by the
+// index). Mirrors the Python run.py write_viewer(label, verdict, modes) shape.
+func (r *Registry) WriteReports(ctx context.Context, model, dir string) ([]string, error) {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, err
+	}
+	type row struct {
+		name, status, file string
+	}
+	var rows []row
+	var written []string
+	for _, b := range r.All() {
+		v, err := b.Run(ctx, model)
+		if err != nil {
+			return written, fmt.Errorf("%s: run: %w", b.Name, err)
+		}
+		var records []*probe.Record
+		if b.Probe != nil {
+			records, err = b.Probe(ctx, model)
+			if err != nil {
+				return written, fmt.Errorf("%s: probe: %w", b.Name, err)
+			}
+		}
+		out := filepath.Join(dir, b.Name+".html")
+		_, err = viewer.Write(out, records,
+			viewer.WithLabel(b.Name+" · "+v.Status),
+			viewer.WithVerdict(verdictMap(v)),
+			viewer.WithModes(modesFromVerdict(v)),
+		)
+		if err != nil {
+			return written, fmt.Errorf("%s: write: %w", b.Name, err)
+		}
+		written = append(written, out)
+		rows = append(rows, row{name: b.Name, status: v.Status, file: b.Name + ".html"})
+	}
+
+	// index.html — links every per-bench report with its verdict badge.
+	var body []string
+	body = append(body,
+		"<!doctype html><html><head><meta charset='utf-8'><title>benchmark reports</title>",
+		"<style>body{background:#FAFAF7;color:#0E0E0C;margin:0;font:14px/1.55 -apple-system,Roboto,Segoe UI,sans-serif}",
+		".wrap{max-width:760px;margin:0 auto;padding:28px 20px 80px}h1{font-size:22px;margin:0 0 18px}",
+		"ul{list-style:none;padding:0;margin:0}li{margin:0 0 8px}a{color:#0E0E0C;text-decoration:none}",
+		".badge{display:inline-block;padding:1px 10px;border-radius:99px;font-size:12px;font-weight:600;margin-right:10px;min-width:84px;text-align:center}",
+		".READY{background:#e7f3ec;color:#1F6B4A}.NOT_READY{background:#fde9e9;color:#b3261e}.UNMEASURED{background:#f0f0ea;color:#6b6b63}",
+		"</style></head><body><div class='wrap'><h1>benchmark reports</h1><ul>",
+	)
+	for _, ro := range rows {
+		body = append(body, fmt.Sprintf(
+			"<li><span class='badge %s'>%s</span><a href='%s'>%s</a></li>",
+			html.EscapeString(ro.status), html.EscapeString(ro.status),
+			html.EscapeString(ro.file), html.EscapeString(ro.name),
+		))
+	}
+	body = append(body, "</ul></div></body></html>")
+	index := filepath.Join(dir, "index.html")
+	if err := os.WriteFile(index, []byte(joinStr(body)), 0o644); err != nil {
+		return written, err
+	}
+	written = append(written, index)
+	return written, nil
+}
+
+func joinStr(xs []string) string {
+	out := ""
+	for _, x := range xs {
+		out += x
+	}
+	return out
 }
 
 // DefaultRegistry builds the registry of all benches the ladder ships. model is

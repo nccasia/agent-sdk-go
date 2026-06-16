@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 
@@ -15,8 +16,13 @@ import (
 )
 
 func main() {
+	htmlDir := flag.String("html", "benchmarks/results", "directory to write the inspectable viewer reports into")
+	noHTML := flag.Bool("no-html", false, "skip writing the viewer reports")
+	flag.Parse()
+
+	ctx := context.Background()
 	r := benchmarks.DefaultRegistry()
-	rows, ok, err := r.FreeGate(context.Background())
+	rows, ok, err := r.FreeGate(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "bench: error:", err)
 		os.Exit(2)
@@ -34,4 +40,18 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println("\nbench: free-gate green")
+
+	// By default, also write an inspectable viewer HTML per bench (+ index) into
+	// benchmarks/results (gitignored). The deterministic floor (model="") drives
+	// both the verdicts and any captured probe traces.
+	if !*noHTML {
+		paths, err := r.WriteReports(ctx, "", *htmlDir)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "bench: report:", err)
+			os.Exit(2)
+		}
+		if n := len(paths); n > 0 {
+			fmt.Printf("bench: wrote %d reports · index %s\n", n-1, paths[n-1])
+		}
+	}
 }
