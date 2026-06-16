@@ -8,3 +8,6 @@ benchmarks/**/results/
 # Secrets / local env — never commit (provider creds for live benches live here)
 .env
 .env.*
+
+# built example binaries
+/quickstart
