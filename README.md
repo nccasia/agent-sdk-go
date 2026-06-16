@@ -1,89 +1,219 @@
-# agent-sdk-go
+# agent-sdk-go — PreAct
 
-A Go port of the Python **PreAct** SDK (`agent_sdk`) — the sibling project at
-[`../agent-sdk`](../agent-sdk). The goal is package-for-package API and behavior
-parity, built **test-first**: every Python test/benchmark/example check is
-translated into a Go test, written red, then implemented to green. No rung is
-committed until its checks exit 0.
+> **A pre-structured, fully inspectable agent-reasoning engine — for developers who want to own every building block of an AI agent, not hand the turn to a model and hope.**
 
-> **This is a port, not a rewrite.** The Python `agent_sdk` is the source of
-> truth for behavior. Where a Go test and the Python reference disagree, the
-> Python reference wins — divergences are treated as port bugs, not redesigns.
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+[![Go](https://img.shields.io/badge/go-1.21%2B-00ADD8.svg)](https://go.dev/)
+[![Parity](https://img.shields.io/badge/API%20parity-116%2F116-brightgreen.svg)](./PARITY.md)
+[![Status](https://img.shields.io/badge/status-beta-orange.svg)](#status)
+
+**agent-sdk-go** is a Go port of the Python [**agent-sdk** (PreAct)](https://github.com/nccasia/agent-sdk)
+— package-for-package API and behavior parity, built test-first. The Python project is the **source
+of truth**; where Go and the reference disagree, the reference wins. See [`docs/porting.md`](./docs/porting.md).
+
+It is a Go SDK for building AI agents whose **reasoning process you fully control** — the context,
+the prompt, the steps, the control flow, the durable state. Rather than free-acting turn by turn
+(vanilla ReAct, where the prompt accumulates toward its limit), an agent reasons through a
+deliberate pipeline you assemble, inspect, and tune: **lobes** (what context fires) → **stages** (the
+reasoning steps) → **flows** (the path), with **metacognition** supervising.
+
+The deterministic core — intent recognition, activation, attention/budget, flow resolution — is a
+pure function of `(spec, context)`. Everything that touches the outside world (LLM, tools,
+embeddings, stores, queues) sits behind a narrow interface with an in-memory default.
+
+## Why agent-sdk-go
+
+For developers who want durable reasoning and fully customized behavior — controlled from the
+reasoning process itself, not a prompt-and-pray wrapper.
+
+- **Pre-structured** — every turn runs a deliberate pipeline you read, reorder, and tune.
+- **Multi-stage** — a flow is an ordered sequence of stages, each with its own prompt, context, loop mode, tools, and model.
+- **Context that funnels, not floods** — the prompt is re-tiered every hop toward *useful reasoning per token*.
+- **Fully inspectable** — each turn emits a structured trace (path, prompts, activations, tools, cost) → HTML viewer.
+- **Opt-in plugins** — package a whole capability (lobes/stages/flows/tools) as one plugin; the core ships domain-free.
+- **Provider-agnostic** — Anthropic, OpenAI-compatible, MiniMax, and a deterministic fake behind one interface.
+- **Pure Go** — only one third-party dependency (`modernc.org/sqlite`, no CGO); everything else is the standard library.
+
+## Install
+
+```bash
+go get github.com/nccasia/agent-sdk-go
+```
+
+Requires Go 1.21+ (developed on 1.26). No C toolchain needed — the SQLite store uses the pure-Go
+`modernc.org/sqlite` driver.
+
+## Quickstart
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/nccasia/agent-sdk-go/agent_sdk/agent"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/clients"
+	"github.com/nccasia/agent-sdk-go/agent_sdk/tools"
+)
+
+func main() {
+	search := tools.Tool("search",
+		func(_ context.Context, in map[string]any) (any, error) {
+			return "v2 added streaming.", nil
+		},
+		tools.Desc("Search the knowledge base."),
+		tools.Param("query", "string", true, nil),
+	)
+
+	a := agent.MustPreactAgent(agent.Config{
+		Client:       clients.NewAnthropicClient("claude-opus-4-8"),
+		Instructions: "You are a helpful research assistant.",
+		Tools:        []any{search},
+		// lobes / stages / flows default to the built-in PreAct network when omitted
+	})
+
+	res, err := a.Query(context.Background(), "What changed in v2?")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(res.Text) // → one-shot AgentResult (text, status, usage, trace)
+}
+```
+
+Stream typed events instead of waiting for the final answer:
+
+```go
+for ev := range a.Act(context.Background(), "What changed in v2?").Iter() {
+	fmt.Printf("%T\n", ev) // *events.TextDelta, *events.ToolCall, *events.Final, …
+}
+```
+
+For tests/dev, swap in the deterministic `FakeClient` (no network):
+
+```go
+a := agent.MustPreactAgent(agent.Config{
+	Client:       clients.NewFakeClient([]any{"v2 added streaming."}, nil),
+	Instructions: "…",
+})
+```
+
+For a runnable, real-world reference, see [`examples/codingagent`](./examples/codingagent) — a
+multi-stage coding agent (triage → explore → plan → implement → verify) that edits a real
+filesystem, and [`examples/subagents-analytics`](./examples/subagents-analytics) — a plan → fan-out →
+fan-in agent running real SQL over an in-memory SQLite fixture. Both run offline-deterministic.
+
+## The model
+
+PreAct splits a turn into two separate, tunable axes — **what the agent thinks about** and **how it
+progresses** — with **metacognition** supervising both:
+
+- **`lobes` — the context axis.** Small thinking units that fire the right context + local behavior for one slice of the turn.
+- **`stages` / `flows` — the time axis.** A flow is an ordered pipeline; each stage owns its lobe slice, loop mode, and tools. *New capability is a registry row, not an interpreter branch.*
+- **`intent` — the router.** Each turn an intent biases the lobes and selects the flow — recognized however you choose: fast deterministic signals or an LLM classifier.
+- **`metacognition` — always on.** `monitor → regulate`: adjust the lobe slice, retry, or skip a step — but never a pinned output-contract step (`filter` safety, default-on; `cite` grounding, when the RAG plugin is on).
+- **context that funnels.** Re-tiered every hop (inject · hint + fetch · offload) for *useful reasoning per token*, not maximum context.
+
+The conceptual deep dives live in the Python reference's docs (the model is identical):
+[architecture](https://github.com/nccasia/agent-sdk/blob/main/docs/concepts/01-architecture.md) ·
+[intent & paths](https://github.com/nccasia/agent-sdk/blob/main/docs/concepts/02-intent-and-paths.md) ·
+[context management](https://github.com/nccasia/agent-sdk/blob/main/docs/concepts/04-react-context-management.md) ·
+[memory](https://github.com/nccasia/agent-sdk/blob/main/docs/concepts/06-universal-memory.md) ·
+[plugins](https://github.com/nccasia/agent-sdk/blob/main/docs/concepts/10-plugins.md).
+
+## Core vs. extensions
+
+The SDK draws a deliberate line between what *every* agent is (the domain-free **core** in
+`agent_sdk/lobes`, not toggleable) and what you *add* to it (folder-per-plugin **extensions** in
+`agent_sdk/plugins`). A plugin contributes a full capacity surface — lobes, stages, paths/flows,
+skills, tools. Manage them with a `PluginRegistry` (register / override / enable / disable); an agent
+with no extra plugins is identical to the default network.
+
+### Built-in plugins
+
+All live under `agent_sdk/plugins`, one package each:
+
+| Plugin | Capability | Default |
+|---|---|---|
+| `SafetyPlugin` | output-safety `filter` lobe — every agent wants it | **on** (toggleable) |
+| `FormatPlugin` | answer styling — channel / language / tone | **on** (toggleable) |
+| `RagPlugin` | retrieval grounding — `cite` + the citation contract | opt-in (auto-enabled by `RequireCitations`) |
+| `TaskPlugin` | todo-driven task execution (long-running work) | opt-in |
+| `MetacognitionPlugin` | think-about-thinking — `monitor → regulate` + the `meta_control` tool | opt-in |
+| `PluginSupportTriage` | a worked full-surface example plugin | opt-in (example) |
+
+```go
+import "github.com/nccasia/agent-sdk-go/agent_sdk/plugins"
+
+reg := plugins.BuiltinRegistry()        // no-config builtins
+reg.Register(plugins.NewTaskPlugin())   // add an extension
+reg.Disable("format")                   // turn one off
+a := agent.MustPreactAgent(agent.Config{Client: …, Plugins: reg})
+```
+
+MCP servers are supported via the `agent_sdk/mcp` package and `Config.MCPServers` (connected,
+discovered, and registered as tools at turn start).
 
 ## Status
 
-Ported rung-by-rung along a dependency-ordered ladder (`tasks/`):
+**Beta.** The full public API — the `PreactAgent` façade, the generic `Engine` kernel, first-class
+`Stage`, `tools.Tool`, multi-provider clients, Session/Memory stores, the plugin system, stateless
+serving, the serializable spec, and the probe/inspect/bench surface — is implemented at **100% API
+parity (116/116 exports)** with the Python reference and covered by the test suite. The API may
+still shift before 1.0; changes are tracked in [`CHANGELOG.md`](./CHANGELOG.md).
 
-| Rungs | Subsystem | State |
-|-------|-----------|-------|
-| 00–12 | contracts, lobes/network, events/result/session, engine, memory, metacognition/cognition, tools/mcp, skills, clients, agent facade, serve, plugins | ✅ ported |
-| 13 | inspection: probe, bench, report, viewer, blocks | ✅ ported |
-| 14 | benchmark spine (verdict/ratchet/provider, free-gate) + benches | ✅ ported¹ |
-| 15 | runnable examples (coding-agent, subagents-analytics) | ✅ ported |
+| Area | State |
+|---|---|
+| Public API (`agent_sdk.__all__`) | ✅ 116/116 (`go run ./cmd/parity`) |
+| Benchmark suite (12 benches) | ✅ free-gate green; live benches need a provider |
+| Examples | ✅ both run offline (`go test ./examples/...`) |
+| `gofmt` / `go vet` / `go test -race` | ✅ clean / green |
 
-**Parity: 116/116 exports** (`go run ./cmd/parity`) — 100% of the
-`agent_sdk.__all__` API contract, including `tool_loop → engine.ToolLoop`.
-`gofmt`/`go vet` clean and `go test ./... -race` green across all ported
-packages; both examples run offline-deterministic (`go test ./examples/...`).
+## Inspection
 
-¹ The benchmark **spine** (verdict/ratchet/provider/registry/free-gate) plus
-every bench is ported (tracked as progress rows in `PARITY.md`, excluded from the
-export gate — they are not `__all__` exports). The free-gate (`go run ./cmd/bench`)
-is green and exits 0: each bench reproduces its Python source-of-truth verdict.
-- **Free benches** (deterministic, gated): `statelessbench`, `flowbench`,
-  `promptbench`, `toolbench`, `corgictionbech` → `READY`; `attentionbench` →
-  `NOT_READY` (the qna/research grounding scenarios reference a `cite` lobe that
-  does not fire without RAG — `run.py` exits 1 in Python too). Each ships a
-  check-id parity test against its `run.py` check ids.
-- **Live benches** (agent/task/extension/skill/coding-agent/delegation) — require
-  a real provider, so they report `UNMEASURED` without one and are not gated.
+Every turn is fully inspectable. `probe.Probe` runs one real turn and captures the full trace; the
+`report`/`viewer` packages render a single-file HTML (path · flow · per-stage system prompt &
+provenance · tools · cost). The benchmark runner emits an inspectable report per bench **by default**:
 
-## Layout
+```bash
+go run ./cmd/bench          # free-gate + writes benchmarks/results/<bench>.html + index.html
+go run ./cmd/bench -no-html # gate only
+```
 
-- `agent_sdk/` — the SDK, package-for-package with the Python `agent_sdk/` (core,
-  engine, memory, metacognition, tools, mcp, skills, clients, serve, plugins,
-  agent facade, probe/bench/report/viewer).
-- `cmd/parity` — the export parity gate (reads `PARITY.md`, the `__all__` ledger).
-- `cmd/bench` — the free-benchmark runner (READY gate).
-- `benchmarks/` — the 12 ported bench suites (rung 14) behind the free-gate;
-  `examples/` — the runnable coding-agent + subagents-analytics demos (rung 15).
-- `tasks/` — the **porting ladder**: one `TASK.md` rung per subsystem,
-  dependency-ordered, each gated by exit-0 `go test` checks (Converge format).
-- `.claude/workflows/` — the Workflow-tool drivers that walk the ladder.
+## Develop
+
+```bash
+go build ./...
+gofmt -l .              # must print nothing
+go vet ./...            # clean
+go test ./... -race     # green
+go run ./cmd/parity     # 116/116 exports (100%)
+go run ./cmd/bench      # free-gate green / exit 0
+go test ./examples/...  # examples green
+```
+
+The free benches are deterministic and gated by `cmd/bench`; the live benches require a provider
+(set credentials, then run with a model — they report `UNMEASURED` without one).
 
 ## How the port is driven
 
-The port is executed by a deterministic **keep/revert ratchet** running over the
-ladder, one rung at a time, via the Workflow tool:
+Built test-first as a deterministic rung-by-rung port over a dependency-ordered ladder (`tasks/`):
+each `tasks/NN-*/TASK.md` translates the named Python tests to Go (red), implements to green, and
+commits only when every check exits 0. The drivers live in `.claude/workflows/`. See
+[`docs/porting.md`](./docs/porting.md) and [`PARITY.md`](./PARITY.md) (the `__all__` ledger).
 
-- `.claude/workflows/port-sdk.js` — the full driver: for each `tasks/NN-*/TASK.md`
-  it reads the listed Python modules + tests, writes the equivalent Go `*_test.go`
-  red, implements only that rung's package(s) until every `checks` command exits 0,
-  checks off the exports in `PARITY.md`, and commits. A rung that can't go green in
-  `MAX_WAVES` attempts is recorded in a `BLOCKED.md` and reverted (never committed
-  red) so it can't poison later rungs. It ends at a production-ready parity gateway
-  (`gofmt`/`vet`/`go test -race`/parity/benches/examples).
-- `.claude/workflows/port-sdk-resume.js` — the same ratchet, narrowed to the
-  remaining rungs so a resumed run doesn't re-walk already-committed ones.
+## Documentation
 
-Run the ladder: `Workflow({ name: "port-sdk" })`. The ladder is
-idempotent/resumable — re-running skips rungs whose checks already pass.
+- [`docs/api.md`](./docs/api.md) — the Go public surface, package by package
+- [`docs/porting.md`](./docs/porting.md) — how the port maps to the Python reference
+- [`PARITY.md`](./PARITY.md) — the `agent_sdk.__all__` → Go export ledger
+- The conceptual model (identical to Python): [`agent-sdk/docs/concepts`](https://github.com/nccasia/agent-sdk/tree/main/docs/concepts)
 
-## Verification
+## Contributing
 
-```
-gofmt -l .            # empty
-go vet ./...          # clean
-go test ./...         # green
-go run ./cmd/parity   # 116/116 exports (100%)
-go run ./cmd/bench    # free-gate green / exit 0 (rung 14)
-go test ./examples/...# (rung 15)
-```
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the dev setup, the invariants every change must keep
+(deterministic core, default-network parity, API parity, citations-mandatory), and the test/lint gates.
 
-## Dependency policy
+## License
 
-Pragmatic: vetted Go libs where Python uses deps — `modernc.org/sqlite` (pure-Go
-SQLite store), `github.com/redis/go-redis/v9`, `go.opentelemetry.io/otel`; numpy →
-stdlib `math`; pydantic → struct tags + `encoding/json`; cachetools → TTL/LRU.
-Heavy deps are added at the rung that first needs them and documented in the
-owning package's doc-comment. The Python reference is the sibling `../agent-sdk`.
+Licensed under the [Apache License 2.0](./LICENSE). See [`NOTICE`](./NOTICE) for attribution.
