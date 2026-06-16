@@ -163,6 +163,17 @@ func (a *PreactAgent) assemble() error {
 	return nil
 }
 
+// MemoryStore returns the agent's universal-memory store, or nil when the agent
+// has no store (universal memory disabled). Mirrors the Python agent exposing
+// _memory_store — benchmarks read its stats and seed it directly to drive
+// recall scenarios deterministically.
+func (a *PreactAgent) MemoryStore() *memory.MemoryStore {
+	if ms, ok := a.memoryStore.(*memory.MemoryStore); ok {
+		return ms
+	}
+	return nil
+}
+
 // composeTools builds the ToolRuntime from @tool fns + ToolRuntimes + plugin
 // tools (priority_runtimes first, so a namespaced surface wins name collisions).
 func (a *PreactAgent) composeTools(explicitTools []any, setup *AgentSetup) any {
