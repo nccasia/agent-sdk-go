@@ -254,17 +254,17 @@ func joinStr(xs []string) string {
 // passed through to the live tiers ("" ⇒ free tiers only).
 func DefaultRegistry() *Registry {
 	r := NewRegistry()
-	r.Register(Bench{Name: "agentbench", Tier: Live, Run: RunAgentBench, ExpectStatus: "UNMEASURED"})
+	r.Register(Bench{Name: "agentbench", Tier: Live, Run: RunAgentBench, ExpectStatus: "UNMEASURED", Probe: RunAgentBenchProbes})
 	r.Register(Bench{Name: "attentionbench", Tier: Free, Run: RunAttentionBench, ExpectStatus: "NOT_READY"})
-	r.Register(Bench{Name: "codingagentbench", Tier: Live, Run: RunCodingAgentBench, ExpectStatus: "UNMEASURED"})
+	r.Register(Bench{Name: "codingagentbench", Tier: Live, Run: RunCodingAgentBench, ExpectStatus: "UNMEASURED", Probe: RunCodingAgentBenchProbes})
 	r.Register(Bench{Name: "corgictionbech", Tier: Free, Run: RunCorgictionBench, ExpectStatus: "READY", Probe: RunCorgictionBenchProbes})
-	r.Register(Bench{Name: "delegationbench", Tier: Live, Run: RunDelegationBench, ExpectStatus: "UNMEASURED"})
-	r.Register(Bench{Name: "extensionbench", Tier: Live, Run: RunExtensionBench, ExpectStatus: "UNMEASURED"})
+	r.Register(Bench{Name: "delegationbench", Tier: Live, Run: RunDelegationBench, ExpectStatus: "UNMEASURED", Probe: RunDelegationBenchProbes})
+	r.Register(Bench{Name: "extensionbench", Tier: Live, Run: RunExtensionBench, ExpectStatus: "UNMEASURED", Probe: RunExtensionBenchProbes})
 	r.Register(Bench{Name: "flowbench", Tier: Free, Run: RunFlowBench, ExpectStatus: "READY", Probe: RunFlowBenchProbes})
 	r.Register(Bench{Name: "promptbench", Tier: Free, Run: RunPromptBench, ExpectStatus: "READY", Probe: RunPromptBenchProbes})
-	r.Register(Bench{Name: "skillbench", Tier: Live, Run: RunSkillBench, ExpectStatus: "UNMEASURED"})
+	r.Register(Bench{Name: "skillbench", Tier: Live, Run: RunSkillBench, ExpectStatus: "UNMEASURED", Probe: RunSkillBenchProbes})
 	r.Register(Bench{Name: "statelessbench", Tier: Free, Run: RunStatelessBench, ExpectStatus: "READY"})
-	r.Register(Bench{Name: "taskbench", Tier: Live, Run: RunTaskBench, ExpectStatus: "UNMEASURED"})
+	r.Register(Bench{Name: "taskbench", Tier: Live, Run: RunTaskBench, ExpectStatus: "UNMEASURED", Probe: RunTaskBenchProbes})
 	r.Register(Bench{Name: "toolbench", Tier: Live, Run: RunToolBench, ExpectStatus: "READY"})
 	return r
 }

@@ -132,6 +132,34 @@ func RunDelegationBench(ctx context.Context, model string) (Verdict, error) {
 	return ComposeVerdict(payloads, record), nil
 }
 
+// RunDelegationBenchProbes captures inspectable traces for the viewer. With a
+// real model it drives the actual planning agent; offline (model=="") it builds
+// the SAME representative agent (TaskPlugin mounted, the research flow dropped so
+// a complex query routes to the plan flow) against a FakeClient and runs ONE
+// representative scenario through probe.Probe, so the inspection renders a real
+// path/flow + the executed stages. Adds traces only — the live verdict (Run)
+// stays UNMEASURED without a provider. Mirrors run.py's scenario probe feeding
+// write_viewer.
+func RunDelegationBenchProbes(ctx context.Context, model string) ([]*probe.Record, error) {
+	scns, err := delegationBenchScenarios()
+	if err != nil {
+		return nil, err
+	}
+	if len(scns) == 0 {
+		return nil, nil
+	}
+	ag := agent.MustPreactAgent(agent.Config{
+		Client:       benchProbeClient(model),
+		Instructions: delegationBenchInstr,
+		Plugins:      []any{tasks.NewTaskPlugin(), delegationBenchNoResearch{}},
+	})
+	rec, err := probe.Probe(ctx, ag, scns[0].Query, probe.WithLabel(scns[0].ID))
+	if err != nil {
+		return nil, err
+	}
+	return []*probe.Record{rec}, nil
+}
+
 // delegationBenchInstr is the planning system prompt. Mirrors the run.py agent
 // instructions.
 const delegationBenchInstr = "Answer fully and accurately. When a task has several distinct parts, " +

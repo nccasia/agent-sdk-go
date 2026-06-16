@@ -130,6 +130,39 @@ func RunTaskBench(ctx context.Context, model string) (Verdict, error) {
 	return ComposeVerdict(payloads, record), nil
 }
 
+// RunTaskBenchProbes captures inspectable traces for the viewer. With a real
+// model it drives the actual task agent; offline (model=="") it builds the SAME
+// representative agent (TaskPlugin + the real db.schema/db.query tools over a
+// seeded SQLite DB) against a FakeClient and runs ONE representative task through
+// probe.Probe, so the inspection renders a real path/flow + the executed stages.
+// Adds traces only — the live verdict (Run) stays UNMEASURED without a provider.
+// Mirrors run.py's live probe feeding write_viewer.
+func RunTaskBenchProbes(ctx context.Context, model string) ([]*probe.Record, error) {
+	taskList := taskBenchTasks()
+	if len(taskList) == 0 {
+		return nil, nil
+	}
+	db, err := taskBenchBuildDB()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	store := &taskBenchStore{db: db}
+	ag := agent.MustPreactAgent(agent.Config{
+		Client:        benchProbeClient(model),
+		Instructions:  taskBenchInstructions(),
+		Plugins:       []any{tasks.NewTaskPlugin(), store.plugin()},
+		Funnel:        true,
+		ToolsInPrompt: true,
+		Budgets:       map[string]any{"stall_patience": 4},
+	})
+	rec, err := probe.Probe(ctx, ag, taskList[0].Question, probe.WithLabel("live · "+taskList[0].ID))
+	if err != nil {
+		return nil, err
+	}
+	return []*probe.Record{rec}, nil
+}
+
 // ── live run ─────────────────────────────────────────────────────────────────
 
 // taskBenchResult holds one task's measured outcome.

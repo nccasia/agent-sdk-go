@@ -84,6 +84,54 @@ func RunAgentBench(ctx context.Context, model string) (Verdict, error) {
 	return ComposeVerdict(payloads, record), nil
 }
 
+// RunAgentBenchProbes captures inspectable mission traces for the viewer. With a
+// real model it drives the actual PreactAgent; offline (model=="") it builds the
+// SAME representative agent against a FakeClient and runs 1-2 representative
+// mission turns (ingest a batch of channel facts → recall the current value) so
+// the inspection renders a real path/flow + the executed stages. This adds
+// traces only — the live verdict (Run) stays UNMEASURED without a provider.
+// Mirrors run.py's mission probes feeding write_viewer.
+func RunAgentBenchProbes(ctx context.Context, model string) ([]*probe.Record, error) {
+	facts, err := agentBenchFacts()
+	if err != nil {
+		return nil, err
+	}
+	track := agentBenchPickTrack(facts)
+	entity, concept := track[0].Entity, track[0].Concept
+
+	ag := agent.MustPreactAgent(agent.Config{
+		Client:       benchProbeClient(model),
+		Instructions: agentBenchBase,
+		Session:      session.New("mission-A", nil),
+	})
+
+	var records []*probe.Record
+	// Turn 1 — ingest a representative batch of channel facts amid chatter.
+	batch := track
+	if len(batch) > 8 {
+		batch = batch[:8]
+	}
+	lines := []string{}
+	for _, f := range batch {
+		lines = append(lines, "- "+f.Value)
+	}
+	rec, err := probe.Probe(ctx, ag, "New #ops messages (lots of chatter):\n"+strings.Join(lines, "\n"),
+		probe.WithLabel("mission · ingest"))
+	if err != nil {
+		return nil, err
+	}
+	records = append(records, rec)
+
+	// Turn 2 — recall the current value of the 9x-restated fact.
+	rec, err = probe.Probe(ctx, ag, fmt.Sprintf("What is the current %s for %s?", agentBenchConceptPhrase[concept], entity),
+		probe.WithLabel("mission · recall_current"))
+	if err != nil {
+		return nil, err
+	}
+	records = append(records, rec)
+	return records, nil
+}
+
 // ── dataset → mission inputs (deterministic) ─────────────────────────────────
 
 type agentBenchFact struct {

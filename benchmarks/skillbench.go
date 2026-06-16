@@ -85,6 +85,53 @@ func RunSkillBench(ctx context.Context, model string) (Verdict, error) {
 	return ComposeVerdict(payloads, nil), nil
 }
 
+// RunSkillBenchProbes captures inspectable traces for the viewer. With a real
+// model it drives the actual agent; offline (model=="") it builds the SAME
+// representative agent (the production skill corpus mounted, Funnel +
+// ToolsInPrompt) against a FakeClient and runs ONE representative scenario
+// through probe.Probe, so the inspection renders a real path/flow + the executed
+// stages (and any activated skill). Adds traces only — the live verdict (Run)
+// stays UNMEASURED without a provider. Mirrors run.py's scenario probe feeding
+// write_viewer.
+func RunSkillBenchProbes(ctx context.Context, model string) ([]*probe.Record, error) {
+	production, _, err := skillBenchLoad()
+	if err != nil {
+		return nil, err
+	}
+	bySlug := map[string]*skills.SkillPack{}
+	for _, p := range production {
+		bySlug[p.ID] = p
+	}
+	scenarios, err := skillBenchScenarios()
+	if err != nil {
+		return nil, err
+	}
+	if len(scenarios) == 0 {
+		return nil, nil
+	}
+	sc := scenarios[0]
+	underTest := []any{}
+	for _, s := range sc.SkillsUnderTest {
+		if p := bySlug[s]; p != nil {
+			underTest = append(underTest, p)
+		}
+	}
+	ag := agent.MustPreactAgent(agent.Config{
+		Client:          benchProbeClient(model),
+		Instructions:    skillBenchInstr,
+		UniversalMemory: false,
+		Skills:          underTest,
+		Funnel:          true,
+		ToolsInPrompt:   true,
+		Session:         session.New("sb-"+sc.ID, nil),
+	})
+	rec, err := probe.Probe(ctx, ag, sc.Query, probe.WithLabel(sc.Category+" · "+sc.ID))
+	if err != nil {
+		return nil, err
+	}
+	return []*probe.Record{rec}, nil
+}
+
 // ── corpus loading (the bench's own loader, mirrors loader.py) ───────────────
 
 // skillBenchLoad loads the embedded SKILL.md corpus and splits it into the

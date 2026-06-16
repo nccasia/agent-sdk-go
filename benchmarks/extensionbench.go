@@ -111,6 +111,38 @@ func RunExtensionBench(ctx context.Context, model string) (Verdict, error) {
 	return ComposeVerdict(payloads, nil), nil
 }
 
+// RunExtensionBenchProbes captures inspectable traces for the viewer. With a
+// real model it drives the actual agents; offline (model=="") it builds the SAME
+// representative agents against a FakeClient and runs one PLUGGED + one BARE turn
+// through probe.Probe — the plugged trace shows the plugin's path/flow + lobe +
+// tool, the bare trace shows the default path — so the inspection renders a real
+// path/flow + the executed stages. Adds traces only — the live verdict (Run)
+// stays UNMEASURED without a provider. Mirrors run.py's plugged/unplugged probes
+// feeding write_viewer.
+func RunExtensionBenchProbes(ctx context.Context, model string) ([]*probe.Record, error) {
+	behaviors := extensionBenchBehaviors()
+	if len(behaviors) == 0 {
+		return nil, nil
+	}
+	b := behaviors[0] // the full-surface plugin scenario
+	plugged, err := probe.Probe(ctx, agent.MustPreactAgent(agent.Config{
+		Client:       benchProbeClient(model),
+		Instructions: extensionBenchInstr,
+		Plugins:      []agent.Plugin{support_triage.NewPluginSupportTriage()},
+	}), b.Query, probe.WithLabel("plugged · "+b.ID))
+	if err != nil {
+		return nil, err
+	}
+	bare, err := probe.Probe(ctx, agent.MustPreactAgent(agent.Config{
+		Client:       benchProbeClient(model),
+		Instructions: extensionBenchInstr,
+	}), b.Query, probe.WithLabel("unplugged · "+b.ID))
+	if err != nil {
+		return nil, err
+	}
+	return []*probe.Record{plugged, bare}, nil
+}
+
 func extensionBenchLive(ctx context.Context, model string) (*ModePayload, error) {
 	checks := []Check{}
 	for _, b := range extensionBenchBehaviors() {

@@ -79,6 +79,54 @@ func RunCodingAgentBench(ctx context.Context, model string) (Verdict, error) {
 	return ComposeVerdict(payloads, record), nil
 }
 
+// RunCodingAgentBenchProbes captures one inspectable understand trace for the
+// viewer. With a real model it drives the actual understand pipeline over the
+// SDK tree; offline (model=="") it builds the SAME coding agent over a small
+// temp fixture (calculator.py + test) driven by the scripted understand client,
+// and runs the flagship task through probe.Probe — so the inspection renders the
+// real understand path/flow + the four executed stages (survey → plan →
+// investigate → document). Adds a trace only — the live verdict (Run) stays
+// UNMEASURED without a provider. Mirrors run.py's understand probe feeding
+// write_viewer.
+func RunCodingAgentBenchProbes(ctx context.Context, model string) ([]*probe.Record, error) {
+	if model != "" {
+		target, err := filepath.Abs(filepath.Join("..", "agent_sdk"))
+		if err != nil {
+			return nil, err
+		}
+		rec, err := codingAgentBenchProbe(ctx, target, model)
+		if err != nil {
+			return nil, err
+		}
+		return []*probe.Record{rec}, nil
+	}
+	// Offline: the scripted understand client over a small temp fixture (mirrors
+	// the FREE replay tier) so the trace is fully deterministic with no provider.
+	dir, err := os.MkdirTemp("", "cab-probe-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(dir)
+	if err := os.WriteFile(filepath.Join(dir, "calculator.py"), []byte(codingagent.CalculatorPy), 0o644); err != nil {
+		return nil, err
+	}
+	if err := os.WriteFile(filepath.Join(dir, "test_calculator.py"), []byte(codingagent.TestCalculatorPy), 0o644); err != nil {
+		return nil, err
+	}
+	rec, err := codingAgentBenchProbe(ctx, dir, codingagent.MakeUnderstandClient())
+	if err != nil {
+		return nil, err
+	}
+	return []*probe.Record{rec}, nil
+}
+
+// codingAgentBenchProbe builds the coding agent over target and runs the
+// flagship understand task through probe.Probe. Pure given (target, client).
+func codingAgentBenchProbe(ctx context.Context, target string, client any) (*probe.Record, error) {
+	ag := codingagent.BuildCodingAgent(target, client)
+	return probe.Probe(ctx, ag, codingAgentBenchTask, probe.WithLabel("understand"))
+}
+
 // codingAgentBenchLive drives the understand pipeline against a real provider
 // over the SDK package itself. It is only reached when a model is configured;
 // without one the live mode is missing (the verdict is UNMEASURED).
