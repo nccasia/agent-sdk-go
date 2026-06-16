@@ -88,10 +88,11 @@ func pbAuthoredPrompts() [][2]string {
 	return out
 }
 
-// pbProbeStages drives one probed turn per scenario and flattens to
-// (label, stage) pairs — the structure tier reads off these.
-func pbProbeStages(ctx context.Context) ([][2]any, error) {
-	var out [][2]any
+// pbProbeRecords runs every promptbench scenario through probe.Probe and
+// returns the raw records (reused by the structure tier and the viewer probe
+// closure). Offline-deterministic via FakeClient.
+func pbProbeRecords(ctx context.Context) ([]*probe.Record, error) {
+	var out []*probe.Record
 	for _, sc := range pbScenarios {
 		a := agent.MustPreactAgent(agent.Config{
 			Client:       clients.NewFakeClient([]any{"ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"}, nil),
@@ -101,6 +102,38 @@ func pbProbeStages(ctx context.Context) ([][2]any, error) {
 		if err != nil {
 			return nil, err
 		}
+		out = append(out, rec)
+	}
+	return out, nil
+}
+
+// RunPromptBenchProbes runs a small (3) representative subset of the promptbench
+// scenarios through probe.Probe and returns the records, so the viewer
+// inspection shows a real path/flow + each stage's system_prompt/segments (the
+// same kind of segments the structure tier lints). Offline-deterministic via
+// FakeClient when model=="". Kept to 3 (a qna, a deep research, a clarify
+// follow-up) so cmd/bench stays fast.
+func RunPromptBenchProbes(ctx context.Context, _ string) ([]*probe.Record, error) {
+	recs, err := pbProbeRecords(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(recs) > 3 {
+		recs = recs[:3]
+	}
+	return recs, nil
+}
+
+// pbProbeStages drives one probed turn per scenario and flattens to
+// (label, stage) pairs — the structure tier reads off these.
+func pbProbeStages(ctx context.Context) ([][2]any, error) {
+	recs, err := pbProbeRecords(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out [][2]any
+	for i, rec := range recs {
+		sc := pbScenarios[i]
 		for _, st := range rec.Stages {
 			stage, _ := st["stage"].(string)
 			out = append(out, [2]any{sc[0] + "/" + stage, st})

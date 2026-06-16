@@ -6,11 +6,13 @@ import (
 	"sort"
 
 	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
+	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
 	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
 	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
 	"github.com/mezon/agent-sdk-go/agent_sdk/inspection"
 	mc "github.com/mezon/agent-sdk-go/agent_sdk/metacognition"
 	mcplugin "github.com/mezon/agent-sdk-go/agent_sdk/plugins/metacognition"
+	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
 )
 
 // corgictionbech — the deterministic gate for the SDK's METACOGNITION layer.
@@ -193,6 +195,39 @@ func corgRunPlanCompile() *ModePayload {
 			"same plan → same compiled states"),
 	}
 	return NewPayload(checks, nil)
+}
+
+// corgProbeScenarios — a small, representative slice of the live hard-problem set
+// (a reasoning trap, a logic puzzle, a decomposition prompt). Kept to 3 so
+// cmd/bench stays fast. Mirrors run_live's probe loop over the scenarios.jsonl.
+var corgProbeScenarios = [][2]string{
+	{"trap-bat-ball", "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost? Give the cost of the ball."},
+	{"logic-race", "Alice, Bob and Carol finished a race in distinct positions. Alice was not last. Bob was not first. Carol finished ahead of Bob. Who finished first? Answer with the name."},
+	{"decompose-budget", "Plan a 3-day trip to Tokyo on a $1500 budget: cover flights, lodging, food and activities, and show the running total."},
+}
+
+// RunCorgictionBenchProbes runs the representative hard-problem scenarios through
+// probe.Probe against the EQUIPPED agent (MetacognitionPlugin + metacognition
+// "apply") — the same agent run_live drives — and returns the captured records.
+// Each record carries a real path/flow + the executed stages, so the viewer
+// inspection renders turn/path/flow/steps + each stage's system_prompt/segments.
+// Offline-deterministic via FakeClient when model=="".
+func RunCorgictionBenchProbes(ctx context.Context, _ string) ([]*probe.Record, error) {
+	var records []*probe.Record
+	for _, sc := range corgProbeScenarios {
+		a := agent.MustPreactAgent(agent.Config{
+			Client:        clients.NewFakeClient([]any{"ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"}, nil),
+			Instructions:  "You are a careful, methodical reasoner.",
+			Plugins:       []agent.Plugin{mcplugin.NewMetacognitionPlugin()},
+			Metacognition: "apply",
+		})
+		rec, err := probe.Probe(ctx, a, sc[1], probe.WithLabel(sc[0]))
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, rec)
+	}
+	return records, nil
 }
 
 // RunCorgictionBench composes the corgictionbech verdict (deterministic floor).

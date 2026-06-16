@@ -293,6 +293,51 @@ func flowRunExecution(ctx context.Context) *ModePayload {
 	return NewPayload(checks, nil)
 }
 
+// flowProbeIDs — a small, representative set of scenarios (a social turn, a
+// standard qna, and a deep grounded research) so the viewer inspection shows a
+// real path/flow + ≥1 stage each. Kept tiny so cmd/bench stays fast.
+var flowProbeIDs = []string{"relational-hi", "qna-fact", "research-compare"}
+
+// RunFlowBenchProbes runs the representative scenarios through probe.Probe
+// (reusing Run's agent/state builders) and returns the captured records. Each
+// record carries a real path/flow + the flow's executed stages, so the viewer's
+// inspection renders turn/path/flow/steps + each stage's system_prompt/segments.
+// Offline-deterministic via FakeClient when model=="". Mirrors run.py's probe
+// loop (run_execution) feeding write_viewer.
+func RunFlowBenchProbes(ctx context.Context, _ string) ([]*probe.Record, error) {
+	want := map[string]struct{}{}
+	for _, id := range flowProbeIDs {
+		want[id] = struct{}{}
+	}
+	var records []*probe.Record
+	for _, s := range flowSCN {
+		if _, ok := want[s.id]; !ok {
+			continue
+		}
+		store := memory.NewSessionStoreInMemory()
+		cfg := agent.Config{
+			Client:       clients.NewFakeClient([]any{"ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"}, nil),
+			Instructions: "You are a helpful assistant.",
+			Session:      session.New(s.id, store),
+		}
+		if s.configMode {
+			cfg.Context = map[string]any{"config_mode": true}
+		}
+		a := agent.MustPreactAgent(cfg)
+		if s.warmup != "" {
+			if _, err := probe.Probe(ctx, a, s.warmup, probe.WithLabel(s.id+"·warmup")); err != nil {
+				return nil, err
+			}
+		}
+		rec, err := probe.Probe(ctx, a, s.q, probe.WithLabel(s.id))
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, rec)
+	}
+	return records, nil
+}
+
 // flowPayloads runs every flowbench mode (the deterministic floor). Shared by
 // RunFlowBench and the check-id parity test.
 func flowPayloads(ctx context.Context) map[string]*ModePayload {
