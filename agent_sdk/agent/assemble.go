@@ -10,6 +10,7 @@ import (
 	"github.com/mezon/agent-sdk-go/agent_sdk/core/spec"
 	"github.com/mezon/agent-sdk-go/agent_sdk/events"
 	"github.com/mezon/agent-sdk-go/agent_sdk/flows"
+	"github.com/mezon/agent-sdk-go/agent_sdk/memory"
 	"github.com/mezon/agent-sdk-go/agent_sdk/preact"
 	"github.com/mezon/agent-sdk-go/agent_sdk/result"
 	"github.com/mezon/agent-sdk-go/agent_sdk/session"
@@ -68,10 +69,17 @@ func (a *PreactAgent) assemble() error {
 	resolvedSkills := dedupSkills(append(append([]any(nil), cfg.Skills...), setup.Skills...))
 	// 5) Compose the tool runtime.
 	toolRuntime := a.composeTools(cfg.Tools, setup)
-	// 6) Universal memory is on by default; we don't materialize the store
-	// here (it lives in the memory/ package — wire-up continues in a later
-	// rung when the engine reaches a fuller port). The directives + plumbing
-	// is in place.
+	// 6) Universal memory: when on (the default) the agent owns a
+	// per-agent memory.MemoryStore and the runStream persist path
+	// snapshots it into the session state on save. The Python agent
+	// exposes ``_memory_store`` to the serve module so the worker can
+	// reset on sessionless checkout; the Go port uses ``memoryStore``
+	// for the same purpose.
+	if cfg.UniversalMemory || cfg.UniversalMemory == false { // default: on
+		if a.memoryStore == nil {
+			a.memoryStore = memory.NewMemoryStore()
+		}
+	}
 	a.lobes = resolvedLobes
 	a.stages = resolvedStages
 	a.flows = resolvedFlows
@@ -546,7 +554,14 @@ func mapBudgets(b map[string]any) map[string]any {
 // Query runs one turn and returns the AgentResult. Mirrors
 // PreactAgent.query.
 func (a *PreactAgent) Query(ctx context.Context, input string) (*result.AgentResult, error) {
-	rr, err := a.runStream(ctx, input)
+	return a.QueryWithSession(ctx, input, nil)
+}
+
+// QueryWithSession is the session-aware variant: a non-nil session overrides
+// the agent's configured session for this turn (the per-job seam the
+// stateless AgentWorker relies on).
+func (a *PreactAgent) QueryWithSession(ctx context.Context, input string, sess *session.Session) (*result.AgentResult, error) {
+	rr, err := a.runStream(ctx, input, sess)
 	if err != nil {
 		return nil, err
 	}
@@ -556,8 +571,13 @@ func (a *PreactAgent) Query(ctx context.Context, input string) (*result.AgentRes
 // Act returns an AgentStream over the turn's typed events. Mirrors
 // PreactAgent.act.
 func (a *PreactAgent) Act(ctx context.Context, input string) *events.AgentStream {
+	return a.ActWithSession(ctx, input, nil)
+}
+
+// ActWithSession is the session-aware streaming variant.
+func (a *PreactAgent) ActWithSession(ctx context.Context, input string, sess *session.Session) *events.AgentStream {
 	return events.NewAgentStream(func(yield func(events.AgentEvent) bool) {
-		rr, err := a.runStream(ctx, input)
+		rr, err := a.runStream(ctx, input, sess)
 		if err != nil {
 			return
 		}
@@ -585,7 +605,7 @@ func (a *PreactAgent) RunSnapshot(ctx context.Context, input string, snapshot ma
 	originalSession := a.session
 	a.session = session.New("snapshot", store)
 	defer func() { a.session = originalSession }()
-	rr, err := a.runStream(ctx, input)
+	rr, err := a.runStream(ctx, input, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -624,8 +644,9 @@ func (s *snapshotStore) Compact(_ context.Context, _ string, _ session.Summarize
 
 // runStream is the internal turn driver. It runs the engine once, captures
 // the typed event stream, updates the last-trace, persists the session
-// (when one is configured), and returns the run result.
-func (a *PreactAgent) runStream(ctx context.Context, input string) (*RunResult, error) {
+// (when one is configured), and returns the run result. The optional sess
+// override rebinds the per-turn session (the AgentWorker's per-job seam).
+func (a *PreactAgent) runStream(ctx context.Context, input string, sess *session.Session) (*RunResult, error) {
 	for _, c := range a.preChecks {
 		if c == nil {
 			continue
@@ -634,15 +655,38 @@ func (a *PreactAgent) runStream(ctx context.Context, input string) (*RunResult, 
 			return nil, err
 		}
 	}
+	effective := a.session
+	if sess != nil {
+		effective = sess
+	}
 	var state session.SessionState
-	if a.session != nil {
-		s, err := a.session.Load(ctx)
+	if effective != nil {
+		s, err := effective.Load(ctx)
 		if err != nil {
 			return nil, err
 		}
 		state = s
 	}
-	req := RunRequest{Query: input, State: state, Session: a.session}
+	// Restore the per-agent universal memory from the loaded state's
+	// memory blob (the stateless-serving contract — a fresh process /
+	// replica continues the same conversation from the JSON alone). This
+	// must run on EVERY turn with a session (not just when state.Memory
+	// is non-nil) so a pooled agent never carries the previous session's
+	// working memory into the next one.
+	if a.memoryStore != nil && effective != nil {
+		if ms, ok := a.memoryStore.(*memory.MemoryStore); ok && ms != nil {
+			snap := memory.Snapshot{}
+			if state.Memory != nil {
+				snap.Seq = asIntValue(state.Memory["seq"])
+				snap.Long = asLongSlice(state.Memory["long"])
+				if docs, ok := state.Memory["docs"].(map[string]any); ok {
+					snap.Docs = docs
+				}
+			}
+			ms.Restore(snap)
+		}
+	}
+	req := RunRequest{Query: input, State: state, Session: effective}
 	rr, err := a.engine.Run(ctx, req)
 	if err != nil {
 		return nil, err
@@ -668,16 +712,42 @@ func (a *PreactAgent) runStream(ctx context.Context, input string) (*RunResult, 
 			return nil, err
 		}
 	}
+	// Auto-establish: natively offload the facts the user stated this turn
+	// (deterministic, no LLM cooperation required). Mirrors the Python
+	// ``self._auto_establish and self._memory_store is not None`` branch.
+	if a.memoryStore != nil {
+		if ms, ok := a.memoryStore.(*memory.MemoryStore); ok && ms != nil {
+			for _, fact := range memory.SalientFacts(input) {
+				ms.Remember("fact", fact, memory.RememberOpts{
+					Scope:  "conversation",
+					Key:    memory.FactKey(fact),
+					Source: "establish",
+				})
+			}
+		}
+	}
 	// Persist: when the session's store implements Save, append the turn to
-	// state then save; otherwise fall back to per-turn Append.
-	if a.session != nil {
-		if _, ok := a.session.Store.(session.SessionStoreSaver); ok {
+	// state then save (the WHOLE state path — history + memory + skills +
+	// bias, atomically). Otherwise fall back to per-turn Append. Memory is
+	// snapshotted into the state when the agent has a universal memory
+	// store — matches the Python ``state.memory = self._memory_store.to_json()``
+	// contract in agent.py.
+	if effective != nil {
+		if _, ok := effective.Store.(session.SessionStoreSaver); ok {
 			state.History = append(state.History, session.Turn{Role: "user", Content: input})
 			state.History = append(state.History, session.Turn{Role: "assistant", Content: rr.Result.Text})
-			_, _ = a.session.Save(ctx, state)
+			if ms, ok := a.memoryStore.(*memory.MemoryStore); ok && ms != nil {
+				snap := ms.ToJSON(memory.SnapshotOpts{})
+				if state.Memory == nil {
+					state.Memory = map[string]any{}
+				}
+				state.Memory["seq"] = snap.Seq
+				state.Memory["long"] = snap.Long
+			}
+			_, _ = effective.Save(ctx, state)
 		} else {
-			_ = a.session.Append(ctx, session.Turn{Role: "user", Content: input})
-			_ = a.session.Append(ctx, session.Turn{Role: "assistant", Content: rr.Result.Text})
+			_ = effective.Append(ctx, session.Turn{Role: "user", Content: input})
+			_ = effective.Append(ctx, session.Turn{Role: "assistant", Content: rr.Result.Text})
 		}
 	}
 	return rr, nil
@@ -693,7 +763,7 @@ func (a *PreactAgent) Submit(ctx context.Context, input string) (string, error) 
 	a.jobMu.Unlock()
 	go func() {
 		defer close(ch)
-		rr, err := a.runStream(ctx, input)
+		rr, err := a.runStream(ctx, input, nil)
 		if err != nil {
 			return
 		}
@@ -732,4 +802,34 @@ var jobSeq counter
 
 func newJobSeq() int64 {
 	return jobSeq.Add(1)
+}
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+
+func asIntValue(v any) int {
+	switch x := v.(type) {
+	case int:
+		return x
+	case int64:
+		return int(x)
+	case float64:
+		return int(x)
+	}
+	return 0
+}
+
+func asLongSlice(v any) []map[string]any {
+	switch x := v.(type) {
+	case []map[string]any:
+		return x
+	case []any:
+		out := make([]map[string]any, 0, len(x))
+		for _, e := range x {
+			if m, ok := e.(map[string]any); ok {
+				out = append(out, m)
+			}
+		}
+		return out
+	}
+	return nil
 }

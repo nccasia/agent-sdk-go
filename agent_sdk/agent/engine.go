@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 
 	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
 	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
@@ -551,9 +552,11 @@ func newTraceID() string {
 
 var traceSeq counter
 
-type counter struct{ n int64 }
+// counter is a small atomic counter the engine uses for trace-id / job-id
+// generation. The legacy Add-based interface is preserved; the underlying
+// storage is an atomic so concurrent turns don't race.
+type counter struct{ n atomic.Int64 }
 
 func (c *counter) Add(d int64) int64 {
-	c.n += d
-	return c.n
+	return c.n.Add(d)
 }
