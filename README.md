@@ -18,12 +18,25 @@ Ported rung-by-rung along a dependency-ordered ladder (`tasks/`):
 |-------|-----------|-------|
 | 00–12 | contracts, lobes/network, events/result/session, engine, memory, metacognition/cognition, tools/mcp, skills, clients, agent facade, serve, plugins | ✅ ported |
 | 13 | inspection: probe, bench, report, viewer, blocks | ✅ ported |
-| 14 | benchmark suites + verdict/ratchet | ⏳ pending |
-| 15 | runnable examples (coding-agent, subagents-analytics) | ⏳ pending |
+| 14 | benchmark spine (verdict/ratchet/provider, free-gate) | ✅ ported · suite partial¹ |
+| 15 | runnable examples (coding-agent, subagents-analytics) | ✅ ported |
 
-**Parity: 115/116 exports** (`go run ./cmd/parity`). The one remaining export is
-`tool_loop → engine.ToolLoop`, deferred with rungs 14–15. `gofmt`/`go vet` clean
-and `go test ./...` green across all ported packages (44 packages).
+**Parity: 116/116 exports** (`go run ./cmd/parity`) — 100% of the
+`agent_sdk.__all__` API contract, including `tool_loop → engine.ToolLoop`.
+`gofmt`/`go vet` clean and `go test ./... -race` green across all ported
+packages; both examples run offline-deterministic (`go test ./examples/...`).
+
+¹ The benchmark **spine** (verdict/ratchet/provider/registry/free-gate) and 3
+benches (attention, corgiction, tool) are ported and the free-gate is green.
+The remaining benches are tracked as unchecked progress rows in `PARITY.md`
+(excluded from the export gate — they are not `__all__` exports). Each is
+blocked on a Go-side SDK capability the Python reference has but this port does
+not yet expose:
+- `statelessbench` / `flowbench` — `agent_from_spec` rebuilder, `AgentWorker`
+  pool isolation, and `Engine.Inspect` with a `SessionState` argument;
+- `promptbench` — `system_segments` on probe-trace stages;
+- live benches (agent/task/extension/skill/coding-agent/delegation) — require a
+  real provider (`UNMEASURED` without one; not part of the free-gate).
 
 ## Layout
 
@@ -61,7 +74,7 @@ idempotent/resumable — re-running skips rungs whose checks already pass.
 gofmt -l .            # empty
 go vet ./...          # clean
 go test ./...         # green
-go run ./cmd/parity   # 115/116 exports (100% on completion)
+go run ./cmd/parity   # 116/116 exports (100%)
 go run ./cmd/bench    # free benches READY (rung 14)
 go test ./examples/...# (rung 15)
 ```
