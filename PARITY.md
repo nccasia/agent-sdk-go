@@ -138,3 +138,19 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] Todo → tasks.Todo
 - [x] TodoRail → tasks.TodoRail
 - [x] TodosToolRuntime → tasks.TodosToolRuntime
+
+## Benchmarks / verdict / ratchet (rung 14)
+Bench types power the gates (no `__all__` entries in the Python `_shared`).
+- [x] compose_verdict → benchmarks.ComposeVerdict (+ Verdict{Status, Gates})
+- [x] _payload → benchmarks.NewPayload (ModePayload{Checks, AllPass, Metrics})
+- [x] verdict_summary → benchmarks.VerdictSummary (Summary{Status, GatesPass, GatesTotal})
+- [x] delta_gate → benchmarks.DeltaGate (deterministic keep/revert ratchet)
+- [x] load_provider → benchmarks.LoadProvider / LoadProviderFrom (free/live split)
+- [x] bench registry + free-gate → benchmarks.Registry / FreeGate, cmd/bench
+- [x] attentionbench → benchmarks.RunAttentionBench (select/recall/grounding/reply/determinism)
+- [x] corgictionbech → benchmarks.RunCorgictionBench (monitor/regulate/pinned/channel/plugin_surface/plan_compile)
+- [x] toolbench (free) → benchmarks.RunToolBench (spec/select/composite)
+- [ ] flowbench → benchmarks (needs engine.inspect-with-state for clarify routing)
+- [ ] statelessbench → benchmarks (needs agent_from_spec + AgentWorker pool semantics)
+- [ ] promptbench → benchmarks (needs trace system_segments + authored prompt constants)
+- [ ] live benches (agent/task/extension/skill/coding-agent/delegation) → benchmarks
