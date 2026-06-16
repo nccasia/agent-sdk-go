@@ -6,6 +6,8 @@
 - [`porting.md`](./porting.md) — how the Go port maps to the Python reference, the package map, naming
   conventions, dependency policy, and conformance.
 - [`../PARITY.md`](../PARITY.md) — the `agent_sdk.__all__` → Go export ledger (the parity gate).
+- [`UPSTREAM.md`](./UPSTREAM.md) — the upstream-sync ledger: which Python commits the port has absorbed
+  (with `scripts/check-upstream.sh` to list unported ones).
 - [`../CHANGELOG.md`](../CHANGELOG.md) · [`../CONTRIBUTING.md`](../CONTRIBUTING.md)
 
 ## The conceptual model

@@ -50,7 +50,23 @@ Benchmarks: the free benches are deterministic and gated by `cmd/bench`; the liv
 provider (set credentials, then run with a model — they report `UNMEASURED` without one). Every
 bench also emits an inspectable HTML report under `benchmarks/results/`.
 
+## Keeping in sync with the Python SDK
+
+The Python [`agent-sdk`](https://github.com/nccasia/agent-sdk) keeps evolving; the Go port tracks it
+commit-by-commit. The state lives in [`docs/UPSTREAM.md`](./docs/UPSTREAM.md) (the ledger) and is
+machine-checkable via the `Upstream:` commit trailer.
+
+```bash
+PYTHON_SDK=../agent-sdk ./scripts/check-upstream.sh   # lists PORTED / PENDING upstream commits
+```
+
+For each `PENDING` commit: read its diff in the Python repo, translate it to Go (tests first), keep
+the suite green, and commit with an **`Upstream: <full-sha>`** trailer in the message. Then advance
+the "Synced to" line and add a row in `docs/UPSTREAM.md`. A hunk with no Go equivalent is recorded as
+`n/a` in the ledger rather than skipped silently.
+
 ## Commit style
 
 Conventional-commit subjects (`feat(...)`, `fix(...)`, `docs:`, `refactor:`, `chore:`). Keep changes
-scoped to one concern; never commit a red tree.
+scoped to one concern; never commit a red tree. Commits that port an upstream change carry an
+`Upstream: <sha>` trailer (see above).

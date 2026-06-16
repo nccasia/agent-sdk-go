@@ -33,6 +33,16 @@ Python project is the source of truth for behavior. See [`docs/porting.md`](./do
 - **Runnable examples** — `examples/codingagent` and `examples/subagents-analytics`, both
   offline-deterministic via `FakeClient`.
 
+### Changed
+- **RAG tool vocabulary → `kg.*`** (synced from upstream `dccf939`): the research sub-agent prompt,
+  the conversation `kb` tool group, and the `KB_LOOKUP` skill pack now use the knowledge-graph tools
+  `kg.schema` / `kg.query` / `kg.read` instead of `semantic_search` / `keyword_search` / `read_chunk`
+  / `kb.retrieve`.
+
+### Upstream sync
+- Synced to upstream `e52e033`. See [`docs/UPSTREAM.md`](./docs/UPSTREAM.md) for the per-commit
+  ledger and `scripts/check-upstream.sh` to list unported upstream commits.
+
 ### Notes
 - Built test-first as a rung-by-rung port (see `tasks/` and [`docs/porting.md`](./docs/porting.md)).
   The API may still shift before 1.0.
