@@ -130,7 +130,7 @@ func TestResolveSkillInstructionsBuiltinOnly(t *testing.T) {
 		"capabilities": map[string]any{"skills": []any{"kb_lookup"}},
 	}, "synthesize")
 	// KBLookupSkill is an eager builtin; its full instructions are inlined.
-	if !strings.Contains(out, "KB lookup with citations") {
+	if !strings.Contains(out, "knowledge-graph lookup with citations") {
 		t.Errorf("builtin KB skill body not surfaced: %q", out)
 	}
 }

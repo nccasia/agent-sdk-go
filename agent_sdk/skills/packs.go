@@ -71,14 +71,14 @@ var KBLookupSkill = &SkillPack{
 	Name:          "Information lookup",
 	Description:   "Look up facts in the bot's knowledge bases and answer with citations.",
 	Stages:        []string{"simple_answer", "research", "synthesize"},
-	RequiredTools: []string{"kb.retrieve", "kb.read_chunk"},
+	RequiredTools: []string{"kg.schema", "kg.query", "kg.read"},
 	Injection:     "eager",
-	Instructions: `SKILL: KB lookup with citations
-- Use KB retrieval tools for factual knowledge questions.
-- Start broad with kb.retrieve or search tools, then read exact chunks when needed.
+	Instructions: `SKILL: knowledge-graph lookup with citations
+- The knowledge base is a graph; answer factual questions from it.
+- kg.schema once to see what's there, then kg.query for each fact (try several phrasings; filter by attr for exact values), then kg.read the best hits for full context.
 - Prefer a short grounded answer over a broad speculative answer.
-- Every factual claim must be supported by source chunks.
-- If the retrieved context does not answer the question, say you cannot confirm it from the knowledge base.`,
+- Every factual claim must be supported by a graph node (cite its ref).
+- If the graph does not answer the question, say you cannot confirm it from the knowledge base.`,
 }
 
 // SkillRegistry is the per-turn view of the skills available to a bot. DB rows
