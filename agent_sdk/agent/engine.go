@@ -121,18 +121,11 @@ func (e *Engine) InspectWithState(query string, state session.SessionState) resu
 			scores[p.Name] = p.Recognizer(ctx)
 		}
 	}
-	resolved := map[string]any{"name": "emergent", "score": 0.0}
-	if len(scores) > 0 {
-		bestName := "emergent"
-		bestScore := 0.0
-		for n, s := range scores {
-			if s > bestScore {
-				bestName = n
-				bestScore = s
-			}
-		}
-		resolved = map[string]any{"name": bestName, "score": bestScore}
-	}
+	// Threshold-aware resolution — a path below its recognition floor stays
+	// dark and the turn falls to the emergent path, EXACTLY as the live turn
+	// (Run) resolves it. Inspect and Run must agree (routing is a pure function
+	// of (spec, context)). Mirrors network/activation.py:resolve_path.
+	resolved := resolvePath(scores, e.Paths)
 	flow := e.selectFlow(resolved)
 	lobeRows := e.resolveLobeRows(ctx)
 	flowNames := []string{}
@@ -349,9 +342,9 @@ var promptLayers = map[string]int{
 	"instructions":     layerIdentity,
 	"memory_directive": layerDirectives,
 	"tools":            layerCapabilities, "skills": layerCapabilities,
-	"stage_prompt": layerTask,
-	"grounding":    layerContract,
-	"session":      layerContext, "context": layerContext, "notes": layerContext,
+	"stage_prompt": layerTask, "subject": layerTask,
+	"grounding": layerContract,
+	"session":   layerContext, "context": layerContext, "notes": layerContext,
 	"datetime": layerEnv,
 }
 
@@ -391,6 +384,13 @@ func (e *Engine) composeSystemSegmented(st any, notes []string) (string, []map[s
 	if sp := stageSystemPrompt(st); sp != "" {
 		add("stage_prompt", sp, "stable")
 	}
+	// The state's subject — the specific sub-question/aspect this state instance
+	// works on (set by the dynamic state plan when a state is expanded over
+	// subjects; empty ⇒ whole turn). Mirrors agent_sdk/engine.py's "subject"
+	// part: a stable TASK-band section the prompt threads verbatim.
+	if subj := stageSubject(st); subj != "" {
+		add("subject", "Work on this specifically:\n"+subj, "stable")
+	}
 	if len(notes) > 0 {
 		add("notes", "[Notes gathered this turn]\n"+strings.Join(notes, "\n"), "turn")
 	}
@@ -414,19 +414,87 @@ func (e *Engine) composeSystemSegmented(st any, notes []string) (string, []map[s
 	})
 
 	sep := "\n\n"
+	xml := e.PromptFormat == "xml"
 	out := ""
 	segments := []map[string]any{}
 	for _, p := range parts {
+		frag := p.text
+		if xml {
+			// Wrap each section in an XML tag (Claude-Code-style); drop a
+			// now-redundant leading "[Header]\n" line since the tag names the
+			// section. Mirrors agent_sdk/engine.py's xml branch.
+			tag := xmlTag(p.source)
+			frag = "<" + tag + ">\n" + stripLeadBracket(frag) + "\n</" + tag + ">"
+		}
+		if frag == "" {
+			continue
+		}
 		if out != "" {
 			out += sep
 		}
 		start := len(out)
-		out += p.text
+		out += frag
 		segments = append(segments, map[string]any{
 			"source": p.source, "start": start, "end": len(out), "stability": p.stability,
 		})
 	}
 	return out, segments
+}
+
+// ComposeSystem composes a stage's system prompt (the joined text, dropping the
+// provenance segments). The exported seam the flow-axis bench uses to assert a
+// state instantiated against a subject threads it into the prompt. Mirrors
+// agent_sdk/engine.py:_compose_system.
+func (e *Engine) ComposeSystem(st any, notes []string) string {
+	out, _ := e.composeSystemSegmented(st, notes)
+	return out
+}
+
+// xmlTag maps a segment source → its XML tag (mirrors agent_sdk/engine.py:
+// _xml_tag + _XML_TAG_MAP): a few renames, lowercased, non-[a-z0-9_] → "_".
+func xmlTag(source string) string {
+	switch source {
+	case "datetime":
+		source = "env"
+	case "memory_index":
+		source = "memory"
+	case "session":
+		source = "conversation"
+	}
+	var b strings.Builder
+	for _, r := range strings.ToLower(source) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_' {
+			b.WriteRune(r)
+		} else {
+			b.WriteRune('_')
+		}
+	}
+	tag := b.String()
+	if tag == "" {
+		return "section"
+	}
+	return tag
+}
+
+// stripLeadBracket drops a redundant leading "[Header]\n" line (mirrors the
+// Python _LEAD_BRACKET_RE) so a now-tagged section does not repeat the header.
+func stripLeadBracket(s string) string {
+	if !strings.HasPrefix(s, "[") {
+		return s
+	}
+	close := strings.IndexByte(s, ']')
+	if close < 0 {
+		return s
+	}
+	nl := strings.IndexByte(s, '\n')
+	if nl < 0 || nl < close {
+		return s
+	}
+	// The "[...]" must occupy the whole first line up to the newline.
+	if close+1 == nl {
+		return s[nl+1:]
+	}
+	return s
 }
 
 // layerKey is the sort key for one part: stability tier first (so the volatile
@@ -463,6 +531,28 @@ func stageSystemPrompt(st any) string {
 		if s, ok := v["system_prompt"].(string); ok {
 			return s
 		}
+	}
+	return ""
+}
+
+// stageSubject returns the stage's subject — the sub-question/aspect this state
+// instance works on ("" ⇒ the whole turn). Mirrors getattr(stage, "subject").
+func stageSubject(st any) string {
+	switch v := st.(type) {
+	case flows.FlowStep:
+		if v.Subject != nil {
+			return *v.Subject
+		}
+	case *flows.FlowStep:
+		if v != nil && v.Subject != nil {
+			return *v.Subject
+		}
+	case map[string]any:
+		if s, ok := v["subject"].(string); ok {
+			return s
+		}
+	case interface{ GetSubject() string }:
+		return v.GetSubject()
 	}
 	return ""
 }
@@ -669,10 +759,13 @@ func (e *Engine) selectFlow(path map[string]any) *flows.Flow {
 			return &e.Flows[i]
 		}
 	}
-	// Fallback: qna (when it exists) or the first flow.
-	for i, f := range e.Flows {
-		if f.ID() == "qna" {
-			return &e.Flows[i]
+	// Emergent / unknown → the named fallback flow, else qna, else the first
+	// flow. Mirrors agent_sdk/engine.py:_select_flow's ("fallback", "qna") order.
+	for _, fb := range []string{"fallback", "qna"} {
+		for i, f := range e.Flows {
+			if f.ID() == fb || f.Name() == fb {
+				return &e.Flows[i]
+			}
 		}
 	}
 	if len(e.Flows) > 0 {
@@ -713,12 +806,30 @@ func buildContext(query string, state session.SessionState, hostCtx any) map[str
 
 func resolvePath(scores map[string]float64, paths []spec.Path) map[string]any {
 	// Deterministic resolution mirrors agent_sdk/network/activation.py:resolve_path:
-	// rank by (-score, name) so ties break by name ascending. Ranging the scores
-	// map directly is nondeterministic (Go randomises map iteration), which would
-	// flip ties between equally-scored paths from run to run.
+	// rank by (-score, name) so ties break by name ascending, then keep only
+	// paths that CLEAR their recognition threshold — a sub-threshold path stays
+	// dark and the turn resolves to the emergent path (its activated lobe set IS
+	// the path). Ranging the scores map directly is nondeterministic (Go
+	// randomises map iteration), which would flip ties between equally-scored
+	// paths from run to run.
+	thresholds := map[string]float64{}
+	for _, p := range paths {
+		th := p.Threshold
+		if th == 0 {
+			th = 0.5
+		}
+		thresholds[p.Name] = th
+	}
 	bestName := "emergent"
 	bestScore := 0.0
 	for n, s := range scores {
+		th, ok := thresholds[n]
+		if !ok {
+			th = 0.5
+		}
+		if s < th {
+			continue
+		}
 		if s > bestScore || (s == bestScore && bestScore > 0 && n < bestName) {
 			bestName = n
 			bestScore = s
