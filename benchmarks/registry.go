@@ -119,6 +119,7 @@ func DefaultRegistry() *Registry {
 	r.Register(Bench{Name: "agentbench", Tier: Live, Run: RunAgentBench, ExpectStatus: "UNMEASURED"})
 	r.Register(Bench{Name: "attentionbench", Tier: Free, Run: RunAttentionBench, ExpectStatus: "NOT_READY"})
 	r.Register(Bench{Name: "corgictionbech", Tier: Free, Run: RunCorgictionBench, ExpectStatus: "READY"})
+	r.Register(Bench{Name: "extensionbench", Tier: Live, Run: RunExtensionBench, ExpectStatus: "UNMEASURED"})
 	r.Register(Bench{Name: "flowbench", Tier: Free, Run: RunFlowBench, ExpectStatus: "READY"})
 	r.Register(Bench{Name: "promptbench", Tier: Free, Run: RunPromptBench, ExpectStatus: "READY"})
 	r.Register(Bench{Name: "statelessbench", Tier: Free, Run: RunStatelessBench, ExpectStatus: "READY"})
