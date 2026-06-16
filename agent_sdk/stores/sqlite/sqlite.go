@@ -1,129 +1,101 @@
 // Package sqlite is the SQLite-backed SessionStore. The Python reference
-// uses the stdlib sqlite3 module. The Go port targets modernc.org/sqlite
-// (pure-Go, no CGO) but the toolchain shipped with the project is Go 1.19
-// and modernc.org/sqlite needs 1.21+. Per the rung's deviation note, this
-// package falls back to a stdlib-only, file-based JSON-blob store when the
-// modernc.org/sqlite toolchain is unavailable. The contract (one JSON blob
-// per id, Load/Append/Compact/Save) is identical, and a future toolchain
-// bump can swap the backend with no API change.
+// (agent_sdk/stores/session.py: SessionStoreSQL) uses the stdlib sqlite3
+// module — one JSON blob per id in a `sessions(id, state)` table. The Go port
+// uses modernc.org/sqlite (pure-Go, no CGO) so the same contract holds on disk
+// and in memory: Load (empty when absent), Save (whole-state atomic upsert),
+// Append (load+mutate+save), Compact (load+fold+save), with a file DSN
+// round-tripping across processes.
 package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
-	"errors"
-	"os"
-	"path/filepath"
-	"sync"
 
 	"github.com/mezon/agent-sdk-go/agent_sdk/session"
+	_ "modernc.org/sqlite"
 )
 
-// Store is the JSON-blob-per-id SessionStore. ":memory:" is process-local;
-// a path dsn persists to one JSON file on disk (atomic-rename).
+const schema = `CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, state TEXT)`
+
+// Store is the SQLite-backed SessionStore. ":memory:" is process-local (a single
+// pooled connection so the in-memory database is shared across calls); a path
+// dsn persists to one SQLite file on disk.
 type Store struct {
-	mu   sync.Mutex
-	dsn  string
-	data map[string]session.SessionState
+	db *sql.DB
 }
 
-// NewStore opens (or creates) a store at dsn.
+// NewStore opens (or creates) a store at dsn and ensures the schema exists.
 func NewStore(dsn string) (*Store, error) {
-	s := &Store{dsn: dsn, data: map[string]session.SessionState{}}
-	if dsn != ":memory:" && dsn != "" {
-		if err := s.loadFile(); err != nil {
-			return nil, err
-		}
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, err
 	}
-	return s, nil
+	// An in-memory database lives only as long as its single connection, so
+	// pin the pool to one connection to keep state across calls.
+	if dsn == ":memory:" || dsn == "" {
+		db.SetMaxOpenConns(1)
+	}
+	if _, err := db.ExecContext(context.Background(), schema); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return &Store{db: db}, nil
 }
 
-// Close flushes any pending state to disk.
+// Close releases the underlying database handle.
 func (s *Store) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.flush()
-}
-
-func (s *Store) loadFile() error {
-	raw, err := os.ReadFile(s.dsn)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
-		return err
-	}
-	if len(raw) == 0 {
-		return nil
-	}
-	blobs := map[string]map[string]any{}
-	if err := json.Unmarshal(raw, &blobs); err != nil {
-		return err
-	}
-	for id, d := range blobs {
-		s.data[id] = session.SessionStateFromJSON(d)
-	}
-	return nil
-}
-
-func (s *Store) flush() error {
-	if s.dsn == ":memory:" || s.dsn == "" {
-		return nil
-	}
-	blobs := map[string]map[string]any{}
-	for id, st := range s.data {
-		blobs[id] = st.ToJSON()
-	}
-	raw, err := json.Marshal(blobs)
-	if err != nil {
-		return err
-	}
-	dir := filepath.Dir(s.dsn)
-	if dir != "" && dir != "." {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return err
-		}
-	}
-	tmp := s.dsn + ".tmp"
-	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
-		return err
-	}
-	return os.Rename(tmp, s.dsn)
+	return s.db.Close()
 }
 
 // Load returns the current SessionState for id (empty when absent).
-func (s *Store) Load(_ context.Context, id string) (session.SessionState, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.data[id], nil
+func (s *Store) Load(ctx context.Context, id string) (session.SessionState, error) {
+	var blob string
+	err := s.db.QueryRowContext(ctx, "SELECT state FROM sessions WHERE id=?", id).Scan(&blob)
+	if err == sql.ErrNoRows {
+		return session.SessionState{}, nil
+	}
+	if err != nil {
+		return session.SessionState{}, err
+	}
+	var d map[string]any
+	if err := json.Unmarshal([]byte(blob), &d); err != nil {
+		return session.SessionState{}, err
+	}
+	return session.SessionStateFromJSON(d), nil
 }
 
-// Save persists the WHOLE state for id.
-func (s *Store) Save(_ context.Context, id string, state session.SessionState) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.data[id] = state
-	return s.flush()
+// Save persists the WHOLE state for id (atomic upsert).
+func (s *Store) Save(ctx context.Context, id string, state session.SessionState) error {
+	raw, err := json.Marshal(state.ToJSON())
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx,
+		"INSERT INTO sessions(id, state) VALUES(?, ?) "+
+			"ON CONFLICT(id) DO UPDATE SET state=excluded.state",
+		id, string(raw))
+	return err
 }
 
 // Append appends one turn to id's history.
-func (s *Store) Append(_ context.Context, id string, turn session.Turn) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	st := s.data[id]
+func (s *Store) Append(ctx context.Context, id string, turn session.Turn) error {
+	st, err := s.Load(ctx, id)
+	if err != nil {
+		return err
+	}
 	st.History = append(st.History, turn)
-	s.data[id] = st
-	return s.flush()
+	return s.Save(ctx, id, st)
 }
 
 // Compact folds older turns into the summary for id.
-func (s *Store) Compact(_ context.Context, id string, summarizer session.Summarizer, keepLast int) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	st := s.data[id]
+func (s *Store) Compact(ctx context.Context, id string, summarizer session.Summarizer, keepLast int) error {
+	st, err := s.Load(ctx, id)
+	if err != nil {
+		return err
+	}
 	if err := session.DoCompact(&st, summarizer, keepLast); err != nil {
 		return err
 	}
-	s.data[id] = st
-	return s.flush()
+	return s.Save(ctx, id, st)
 }

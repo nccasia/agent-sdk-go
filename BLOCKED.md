@@ -4,15 +4,14 @@ Items that the port would do differently given a different environment, but
 that the project's current state forces into a fallback. Each entry records
 the deviation, the blocking reason, and the future-change path.
 
-## rung 11 — modernc.org/sqlite unavailable on Go 1.19
+_None — all prior deviations resolved._
 
-- **Deviation**: `agent_sdk/stores/sqlite` ships a stdlib-only, file-based
-  JSON-blob store (one JSON blob per id) instead of the modernc.org/sqlite
-  pure-Go SQLite driver.
-- **Block**: the project is on Go 1.19.1; `modernc.org/sqlite` requires
-  Go 1.21+. There is no C compiler set up in the build environment either,
-  so the CGO sqlite driver is also unavailable.
-- **Contract preserved**: one JSON blob per id, Load / Save / Append /
-  Compact surface identical, in-memory + file-DSN semantics.
-- **Path forward**: bump the toolchain to Go 1.21+ and swap the
-  implementation to `modernc.org/sqlite` (the public API does not change).
+## resolved
+
+### rung 11 — modernc.org/sqlite (was: unavailable on Go 1.19)
+
+- **Was**: `agent_sdk/stores/sqlite` shipped a stdlib-only JSON-blob fallback
+  because the project was pinned to Go 1.19 and `modernc.org/sqlite` needs 1.21+.
+- **Resolved**: toolchain bumped (`go.mod` → go 1.21+), store swapped to the
+  pure-Go `modernc.org/sqlite` driver with the Python `sessions(id, state)`
+  schema (one JSON blob per id). Public API unchanged; tests green.
