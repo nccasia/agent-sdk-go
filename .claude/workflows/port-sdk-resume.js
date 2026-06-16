@@ -14,11 +14,10 @@ export const meta = {
   ],
 }
 
+// Rungs 09-12 are already committed (see git log); resume from 13 onward so we
+// don't re-run four green rungs. Rung 13 has partial uncommitted work in the
+// tree (test files scaffolded, probe.go implemented) — the agent continues it.
 const RUNGS = [
-  '09-clients',
-  '10-agent-facade',
-  '11-serve-stateless',
-  '12-plugins',
   '13-inspection-probe-bench-viewer',
   '14-benchmarks',
   '15-examples',
