@@ -184,7 +184,7 @@
       "layer": 5,
       "order": 1,
       "prior": 0.0,
-      "pinned": false,
+      "pinned": true,
       "min_activation": 0.5,
       "edges": {},
       "signal_weights": {},

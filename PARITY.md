@@ -121,3 +121,20 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] ProviderUsage → clients.ProviderUsage
 - [x] TextBlock → clients.TextBlock
 - [x] ToolUseBlock → clients.ToolUseBlock
+
+## Plugins (rung 12)
+- [x] Plugin → agent.Plugin
+- [x] AgentSetup → agent.AgentSetup
+- [x] PluginRegistry → agent.PluginRegistry
+- [x] builtin_registry → plugins.BuiltinRegistry
+- [x] default_capability_plugins → plugins.DefaultCapabilityPlugins
+- [x] capability_lobes → plugins.CapabilityLobes
+- [x] SafetyPlugin → plugins.NewSafetyPlugin
+- [x] FormatPlugin → plugins.NewFormatPlugin
+- [x] TaskPlugin → plugins.NewTaskPlugin
+- [x] RagPlugin → plugins.NewRagPlugin
+- [x] MetacognitionPlugin → plugins.NewMetacognitionPlugin
+- [x] PluginSupportTriage → plugins.NewPluginSupportTriage
+- [x] Todo → tasks.Todo
+- [x] TodoRail → tasks.TodoRail
+- [x] TodosToolRuntime → tasks.TodosToolRuntime

@@ -129,7 +129,7 @@ var minimalLobes = []lobes.Lobe{
 	{ID: "cite", Name: "Cite", Layer: spec.LayerExpression, Behavior: "ground", Order: 8,
 		Description: "Attach grounding to claims (the output contract).",
 		UseWhen:     "grounding (KB-answering) turns"},
-	{ID: "filter", Name: "Filter", Layer: spec.LayerExpression, Behavior: "filter", Order: 9,
+	{ID: "filter", Name: "Filter", Layer: spec.LayerExpression, Behavior: "filter", Order: 9, Pinned: true,
 		Description: "Refuse rather than emit ungrounded claims (ground-or-refuse).",
 		UseWhen:     "grounding (KB-answering) turns"},
 }

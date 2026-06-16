@@ -33,6 +33,21 @@ func (a *PreactAgent) assemble() error {
 	setup := NewAgentSetup()
 	setup.SetHost(cfg.Host)
 	activePlugins := activePluginsOf(cfg.Plugins)
+	// Auto-enable RagPlugin when require_citations is on (the Python
+	// port does this implicitly: a user who asks for citations
+	// should not have to also know to install the rag plugin).
+	if cfg.RequireCitations {
+		hasRag := false
+		for _, p := range activePlugins {
+			if p != nil && p.Name() == "rag" {
+				hasRag = true
+				break
+			}
+		}
+		if !hasRag {
+			activePlugins = append(activePlugins, autoRagPlugin{})
+		}
+	}
 	for _, p := range activePlugins {
 		p.Install(setup)
 	}
@@ -43,6 +58,11 @@ func (a *PreactAgent) assemble() error {
 	resolvedFlows = append(resolvedFlows, setup.Flows...)
 	// 3) Honor plugin removals (pinned lobes survive).
 	resolvedLobes = filterRemovedLobes(resolvedLobes, setup.RemovedLobes)
+	// RemovePath implies removing the corresponding flow too (a
+	// plugin that owns a path can subtract both at once).
+	for name := range setup.RemovedPaths {
+		setup.RemovedFlows[name] = struct{}{}
+	}
 	resolvedFlows = filterRemovedFlows(resolvedFlows, setup.RemovedFlows)
 	if len(setup.Paths) > 0 {
 		if cfg.Flows == nil {
@@ -50,19 +70,29 @@ func (a *PreactAgent) assemble() error {
 			for _, p := range setup.Paths {
 				resolvedPaths = append(resolvedPaths, p)
 			}
-			a.paths = resolvedPaths
+			// Plugin-contributed flows also generate paths so the
+			// engine's intent recognizer can route to them.
+			for _, f := range resolvedFlows {
+				resolvedPaths = append(resolvedPaths, derivePathFromFlow(f))
+			}
+			a.paths = filterRemovedPaths(resolvedPaths, setup.RemovedPaths)
 		} else {
 			resolvedPaths := derivePathSpecsFromFlows(resolvedFlows, resolvedStages)
 			for _, p := range setup.Paths {
 				resolvedPaths = append(resolvedPaths, p)
 			}
-			a.paths = resolvedPaths
+			a.paths = filterRemovedPaths(resolvedPaths, setup.RemovedPaths)
 		}
 	} else {
 		if cfg.Flows == nil {
-			a.paths = defaultPathSpecs()
+			resolvedPaths := defaultPathSpecs()
+			// Plugin-contributed flows generate paths.
+			for _, f := range resolvedFlows {
+				resolvedPaths = append(resolvedPaths, derivePathFromFlow(f))
+			}
+			a.paths = filterRemovedPaths(resolvedPaths, setup.RemovedPaths)
 		} else {
-			a.paths = derivePathSpecsFromFlows(resolvedFlows, resolvedStages)
+			a.paths = filterRemovedPaths(derivePathSpecsFromFlows(resolvedFlows, resolvedStages), setup.RemovedPaths)
 		}
 	}
 	// 4) Skills: dedup by id, explicit wins.
@@ -359,6 +389,27 @@ func derivePathSpecsFromFlows(flowsList []flows.Flow, stagesList []any) []spec.P
 	return out
 }
 
+// derivePathFromFlow builds a spec.Path from a single flow, using
+// the flow's `Signal()` as the recognizer. Mirrors
+// agent_sdk.network._derive_path_for_flow.
+func derivePathFromFlow(f flows.Flow) spec.Path {
+	spec := spec.Path{
+		Name:      f.ID(),
+		Members:   f.Stages,
+		Bias:      map[string]float64{},
+		Threshold: f.Threshold,
+		Grounds:   f.Grounds,
+	}
+	if spec.Threshold == 0 {
+		spec.Threshold = 0.5
+	}
+	// Wrap the flow's Signal method so the path recognizer uses
+	// the flow's own recognizer (rather than the constant 0.5 the
+	// default derivePathSpecsFromFlows hard-codes).
+	spec.Recognizer = func(ctx map[string]any) float64 { return f.Signal(ctx) }
+	return spec
+}
+
 func stageLobes(st any) ([]string, bool) {
 	switch v := st.(type) {
 	case spec.Stage:
@@ -469,6 +520,23 @@ func filterRemovedFlows(in []flows.Flow, removed map[string]struct{}) []flows.Fl
 			continue
 		}
 		out = append(out, f)
+	}
+	return out
+}
+
+// filterRemovedPaths drops paths whose name was removed by a plugin.
+// Unlike lobes, paths are NOT pinned — a plugin that owns a path can
+// subtract it. Mirrors the Python “RemovePath“ contract.
+func filterRemovedPaths(in []spec.Path, removed map[string]struct{}) []spec.Path {
+	if len(removed) == 0 {
+		return in
+	}
+	out := []spec.Path{}
+	for _, p := range in {
+		if _, drop := removed[p.Name]; drop {
+			continue
+		}
+		out = append(out, p)
 	}
 	return out
 }
@@ -832,4 +900,21 @@ func asLongSlice(v any) []map[string]any {
 		return out
 	}
 	return nil
+}
+
+// autoRagPlugin is the synthetic plugin the agent installs when
+// require_citations is on. It only adds the `cite` lobe + the
+// finalize-grounding hook; the actual retrieval (KB / search) is
+// still a host concern.
+type autoRagPlugin struct{}
+
+// autoCiteLobeSpec is a minimal `cite` lobe the auto-plugin installs.
+var autoCiteLobeSpec = spec.Lobe{
+	ID: "cite", Layer: 5, Behavior: "rewrite", Pinned: true, Order: 1,
+	BuildContext: true, MinActivation: 0,
+}
+
+func (autoRagPlugin) Name() string { return "rag" }
+func (autoRagPlugin) Install(s *AgentSetup) {
+	s.AddLobe(autoCiteLobeSpec)
 }

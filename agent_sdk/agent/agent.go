@@ -224,6 +224,70 @@ func (r *PluginRegistry) Active() []Plugin {
 	return out
 }
 
+// Register adds a plugin (or overrides one with the same name).
+// Re-enables the name. Mirrors PluginRegistry.register / override in
+// the Python port.
+func (r *PluginRegistry) Register(p Plugin) {
+	if p == nil {
+		return
+	}
+	name := p.Name()
+	// Override in place if the same name is already registered.
+	for i, existing := range r.plugins {
+		if existing != nil && existing.Name() == name {
+			r.plugins[i] = p
+			delete(r.disabled, name)
+			return
+		}
+	}
+	r.plugins = append(r.plugins, p)
+	delete(r.disabled, name)
+}
+
+// Override is an alias for Register (kept for readability).
+func (r *PluginRegistry) Override(p Plugin) { r.Register(p) }
+
+// Remove removes a plugin by name.
+func (r *PluginRegistry) Remove(name string) {
+	out := r.plugins[:0]
+	for _, p := range r.plugins {
+		if p != nil && p.Name() != name {
+			out = append(out, p)
+		}
+	}
+	r.plugins = out
+	delete(r.disabled, name)
+}
+
+// Names returns the registered plugin names in insertion order.
+func (r *PluginRegistry) Names() []string {
+	out := make([]string, 0, len(r.plugins))
+	for _, p := range r.plugins {
+		if p != nil {
+			out = append(out, p.Name())
+		}
+	}
+	return out
+}
+
+// Get returns the plugin with the given name, or nil.
+func (r *PluginRegistry) Get(name string) Plugin {
+	for _, p := range r.plugins {
+		if p != nil && p.Name() == name {
+			return p
+		}
+	}
+	return nil
+}
+
+// IsEnabled reports whether the named plugin is currently active.
+func (r *PluginRegistry) IsEnabled(name string) bool {
+	if _, off := r.disabled[name]; off {
+		return false
+	}
+	return r.Get(name) != nil
+}
+
 // IsDisabled reports whether the named plugin is disabled.
 func (r *PluginRegistry) IsDisabled(name string) bool {
 	_, ok := r.disabled[name]
