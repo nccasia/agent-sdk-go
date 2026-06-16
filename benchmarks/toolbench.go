@@ -6,8 +6,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
+	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
 	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
 	"github.com/mezon/agent-sdk-go/agent_sdk/mcp"
+	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
 	"github.com/mezon/agent-sdk-go/agent_sdk/tools"
 )
 
@@ -193,6 +196,53 @@ func tbRunComposite(ctx context.Context) *ModePayload {
 		ck("composite.external_marked", mcpHasOrder, "external MCP tools are never scored out by adaptive selection"),
 	}
 	return NewPayload(checks, nil)
+}
+
+// tbLoopClient scripts a deterministic tool-using turn for the probe: the first
+// stage offered the get_weather tool emits a tool_use call, every later turn (and
+// any stage without the tool) replies with a final text answer. This drives a
+// REAL agentic tool loop through the engine with no provider, so the captured
+// trace carries the tool call + the bounded answer.
+func tbLoopClient() *clients.FakeClient {
+	called := false
+	return clients.Scripted(func(_, _ string, _ []map[string]any, toolSpecs []map[string]any) any {
+		offered := false
+		for _, t := range toolSpecs {
+			if n, _ := t["name"].(string); n == "get_weather" {
+				offered = true
+			}
+		}
+		if offered && !called {
+			called = true
+			return map[string]any{
+				"text":  "Let me check the weather.",
+				"tools": []map[string]any{{"name": "get_weather", "input": map[string]any{"city": "Hanoi"}}},
+			}
+		}
+		return "It is 21 celsius in Hanoi right now."
+	})
+}
+
+// RunToolBenchProbes captures a representative probe trace of the bench's tool-use
+// agent on a tool-call query. toolbench is a plumbing bench (it certifies @tool
+// spec generation, the runtime boundary, MCP discovery, and adaptive selection),
+// but this probe drives the REAL PreactAgent through one agentic tool loop with
+// the get_weather + order_status_local tools registered — so the viewer inspection
+// renders a populated trace (path/flow, the executed stages, the tool call, and
+// the tool_selection record), not an empty one. Mirrors run.py:run_loop's single
+// probe(agent, "...weather...") record. Offline-deterministic via FakeClient (the
+// free gate runs with no provider), so model is ignored.
+func RunToolBenchProbes(ctx context.Context, _ string) ([]*probe.Record, error) {
+	a := agent.MustPreactAgent(agent.Config{
+		Client:       tbLoopClient(),
+		Tools:        []any{tbWeather(), tbOrderLocal()},
+		Instructions: "You answer by calling tools, then reporting the result.",
+	})
+	rec, err := probe.Probe(ctx, a, "What is the weather in Hanoi right now?", probe.WithLabel("loop · weather"))
+	if err != nil {
+		return nil, err
+	}
+	return []*probe.Record{rec}, nil
 }
 
 // RunToolBench composes the toolbench verdict. The live loop mode registers only

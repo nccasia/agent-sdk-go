@@ -8,6 +8,7 @@ import (
 	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
 	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
 	"github.com/mezon/agent-sdk-go/agent_sdk/core/attention"
+	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
 )
 
 // attentionbench — the bench for the SDK's CONTEXT axis (OY: what the agent
@@ -135,6 +136,43 @@ func attnRunDeterminism(a *agent.PreactAgent) *ModePayload {
 		checks = append(checks, ck("determinism."+s.id, same, "stable activation across two inspects"))
 	}
 	return NewPayload(checks, nil)
+}
+
+// attnProbeIDs — a small, representative slice of the scenarios (a qna router
+// and a deep grounded research turn) so the viewer inspection shows a real
+// path/flow + the lobe activations the bench scores on, without running every
+// scenario. Kept to 2 so cmd/bench stays fast.
+var attnProbeIDs = []string{"qna", "research"}
+
+// RunAttentionBenchProbes captures representative probe traces of the bench's
+// attention agent on 1-2 of its scenarios. attentionbench already drives an
+// attention agent via the no-LLM Inspect; this probe runs the SAME agent end-to-end
+// through probe.Probe so the viewer inspection renders a populated trace
+// (path/flow, the executed stages, and the per-stage lobe activations / attention
+// record) rather than the empty [] the Python run.py passes to write_viewer.
+// Offline-deterministic via FakeClient (the bench is a Free / no-provider gate),
+// so model is ignored.
+func RunAttentionBenchProbes(ctx context.Context, _ string) ([]*probe.Record, error) {
+	want := map[string]struct{}{}
+	for _, id := range attnProbeIDs {
+		want[id] = struct{}{}
+	}
+	var records []*probe.Record
+	for _, s := range attnSCN {
+		if _, ok := want[s.id]; !ok {
+			continue
+		}
+		a := agent.MustPreactAgent(agent.Config{
+			Client:       clients.NewFakeClient([]any{"ok", "ok", "ok", "ok", "ok", "ok", "ok", "ok"}, nil),
+			Instructions: "You are a research assistant.",
+		})
+		rec, err := probe.Probe(ctx, a, s.q, probe.WithLabel(s.id))
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, rec)
+	}
+	return records, nil
 }
 
 // RunAttentionBench composes the attentionbench verdict.

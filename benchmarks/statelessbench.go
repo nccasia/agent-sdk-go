@@ -8,6 +8,7 @@ import (
 
 	"github.com/mezon/agent-sdk-go/agent_sdk/agent"
 	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
+	"github.com/mezon/agent-sdk-go/agent_sdk/probe"
 	"github.com/mezon/agent-sdk-go/agent_sdk/serve"
 	"github.com/mezon/agent-sdk-go/agent_sdk/session"
 	"github.com/mezon/agent-sdk-go/agent_sdk/stores/sqlite"
@@ -310,6 +311,60 @@ func RunStatelessBench(ctx context.Context, _ string) (Verdict, error) {
 		"schema":    statelessRunSchema(),
 	}
 	return ComposeVerdict(payloads, map[string][]string{"isolation": {"clean", "sessions"}}), nil
+}
+
+// statelessProbeAgent builds the universal-memory agent under test bound to a
+// session on the given store/id — so probe.Probe's a.Act persists turns + memory
+// through the store (the stateless hop the bench certifies).
+func statelessProbeAgent(sid string, store session.SessionStore) *agent.PreactAgent {
+	script := make([]any, 8)
+	for i := range script {
+		script[i] = statelessAnswer
+	}
+	return agent.MustPreactAgent(agent.Config{
+		Client:       clients.NewFakeClient(script, nil),
+		Instructions: "You are helpful.",
+		Session:      session.New(sid, store),
+	})
+}
+
+// RunStatelessBenchProbes captures a representative probe trace of the bench's
+// agent on the canonical stateless flow — store a fact on turn 1, then recall it
+// on turn 2 from a FRESH agent that resumes the SAME session from a shared store.
+// statelessbench exercises the snapshot/store/serve plumbing more than LLM turns,
+// but the probe still drives the real PreactAgent end-to-end so the viewer
+// inspection renders a populated path/flow + the stage timeline (not an empty
+// trace). The two records (store + recall) mirror run_store's resume-across-agents
+// hop. Offline-deterministic via FakeClient (the bench is a Free / no-provider
+// gate), so model is ignored.
+func RunStatelessBenchProbes(ctx context.Context, _ string) ([]*probe.Record, error) {
+	store, err := sqlite.NewStore(":memory:")
+	if err != nil {
+		return nil, fmt.Errorf("statelessbench probe: store open: %w", err)
+	}
+	defer store.Close()
+	const sid = "probe-conv"
+	var records []*probe.Record
+
+	// Turn 1 — store a fact; capture the trace.
+	a1 := statelessProbeAgent(sid, store)
+	rec1, err := probe.Probe(ctx, a1,
+		"Remember:\n- My name is Alice\n- I work at Acme Corp", probe.WithLabel("store · remember Alice@Acme"))
+	if err != nil {
+		return nil, err
+	}
+	records = append(records, rec1)
+
+	// Turn 2 — a FRESH agent resumes the same session from the shared store and
+	// recalls the fact. This is the stateless hop the bench certifies, captured
+	// as a real probe trace.
+	a2 := statelessProbeAgent(sid, store)
+	rec2, err := probe.Probe(ctx, a2, "What is my name?", probe.WithLabel("recall · across stateless hop"))
+	if err != nil {
+		return nil, err
+	}
+	records = append(records, rec2)
+	return records, nil
 }
 
 // asInt coerces a snapshot's numeric field (native int or JSON float64).
