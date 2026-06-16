@@ -547,7 +547,12 @@ loop:
 		go func(j Job) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			_ = w.runJob(serveCtx, j)
+			// Run the job on the PARENT context, not serveCtx: reaching
+			// maxJobs cancels serveCtx to unblock the consume goroutine,
+			// but the last in-flight turn must still finish its
+			// load→run→offload (a canceled context would abort the
+			// store Save, losing that session's state).
+			_ = w.runJob(ctx, j)
 		}(job)
 		processed++
 		if maxJobs > 0 && processed >= maxJobs {

@@ -118,6 +118,7 @@ func DefaultRegistry() *Registry {
 	r := NewRegistry()
 	r.Register(Bench{Name: "attentionbench", Tier: Free, Run: RunAttentionBench, ExpectStatus: "NOT_READY"})
 	r.Register(Bench{Name: "corgictionbech", Tier: Free, Run: RunCorgictionBench, ExpectStatus: "READY"})
+	r.Register(Bench{Name: "statelessbench", Tier: Free, Run: RunStatelessBench, ExpectStatus: "READY"})
 	r.Register(Bench{Name: "toolbench", Tier: Live, Run: RunToolBench, ExpectStatus: "READY"})
 	return r
 }
