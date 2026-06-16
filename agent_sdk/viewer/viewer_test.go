@@ -159,9 +159,24 @@ func TestToRecordSystemSegmentsPassthrough(t *testing.T) {
 		t.Fatalf("probe: %v", err)
 	}
 	vr := ToRecord(rec)
-	// The viewer record should always have flow_steps (maybe with empty system
-	// segments when the engine didn't record any).
+	// The viewer record should always have flow_steps.
 	if len(vr.Trace.FlowSteps) == 0 {
-		t.Errorf("flow_steps empty")
+		t.Fatalf("flow_steps empty")
+	}
+	// The engine now composes provenance segments, so the passthrough must
+	// surface them: each step carries a non-empty []map with {source,start,end,
+	// stability}, and the identity (`instructions`) source leads.
+	segs, ok := vr.Trace.FlowSteps[0]["system_segments"].([]map[string]any)
+	if !ok || len(segs) == 0 {
+		t.Fatalf("system_segments not surfaced through ToRecord: %T %v",
+			vr.Trace.FlowSteps[0]["system_segments"], vr.Trace.FlowSteps[0]["system_segments"])
+	}
+	for _, k := range []string{"source", "start", "end", "stability"} {
+		if _, has := segs[0][k]; !has {
+			t.Errorf("segment missing %q key: %v", k, segs[0])
+		}
+	}
+	if src, _ := segs[0]["source"].(string); src != "instructions" {
+		t.Errorf("first segment source = %q, want instructions", src)
 	}
 }

@@ -3,9 +3,11 @@ package agent
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/mezon/agent-sdk-go/agent_sdk/clients"
 	"github.com/mezon/agent-sdk-go/agent_sdk/contracts"
@@ -210,8 +212,7 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 		st := stageRegistry.Get(sid)
 		out = append(out, events.Stamp(&events.StageStart{Flow: flow.ID(), Stage: sid}, traceID))
 		steps := []map[string]any{}
-		baseSystem := e.composeSystem(sid)
-		system := composeSystemWithNotes(baseSystem, notes)
+		system, systemSegments := e.composeSystemSegmented(st, notes)
 		tools := e.toolSpecs()
 		// Agentic stages loop over hops: call → dispatch tools → feed the
 		// results back → recall, until the model answers with no tool calls or
@@ -279,7 +280,8 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 		out = append(out, events.Stamp(&events.StageEnd{Flow: flow.ID(), Stage: sid, Usage: usage}, traceID))
 		flowStages = append(flowStages, map[string]any{
 			"flow": flow.ID(), "stage": sid, "steps": steps, "skipped": false,
-			"system_prompt": system,
+			"system_prompt":   system,
+			"system_segments": systemSegments,
 		})
 	}
 	// 5) Finalize hooks: rewrite answer / augment citations / force refusal.
@@ -324,14 +326,164 @@ func (e *Engine) Run(ctx context.Context, req RunRequest) (*RunResult, error) {
 	return &RunResult{Result: res, Events: out, State: req.State, Trace: res.Trace}, nil
 }
 
-// composeSystemWithNotes appends a "[Notes gathered this turn]" section
-// carrying each prior stage's tagged conclusion so the current stage builds on
-// them (the Python engine's cross-stage notes channel). No notes ⇒ unchanged.
-func composeSystemWithNotes(system string, notes []string) string {
-	if len(notes) == 0 {
-		return system
+// Canonical prompt-layer order (mirrors agent_sdk/engine.py:_PROMPT_LAYERS). A
+// STABLE, cacheable instruction prefix leads; the VOLATILE per-turn tail trails
+// into the message hops. Segments sort by (stability tier, layer band, authored
+// order), so the turn-volatile sections form a contiguous suffix — the future
+// cache-prefix boundary — and identity is never buried mid-prompt.
+const (
+	layerIdentity = iota
+	layerDirectives
+	layerCapabilities
+	layerTask
+	layerContract
+	layerSafety
+	layerContext
+	layerEnv
+)
+
+// promptLayers maps a segment source → its canonical layer band. An unmapped
+// source falls in the TASK band (stability is the primary sort key, so a
+// per-turn section stays in the tail regardless of band).
+var promptLayers = map[string]int{
+	"instructions":     layerIdentity,
+	"memory_directive": layerDirectives,
+	"tools":            layerCapabilities, "skills": layerCapabilities,
+	"stage_prompt": layerTask,
+	"grounding":    layerContract,
+	"session":      layerContext, "context": layerContext, "notes": layerContext,
+	"datetime": layerEnv,
+}
+
+// stabRank mirrors agent_sdk/engine.py:_STAB_RANK — the stability tier is the
+// primary sort key, so the volatile tail is always contiguous.
+var stabRank = map[string]int{"stable": 0, "slow": 1, "turn": 2, "volatile": 3}
+
+// systemPart is one (source, text, stability) contribution before sorting.
+type systemPart struct {
+	source    string
+	text      string
+	stability string
+	idx       int // authored order, the final tiebreak
+}
+
+// composeSystemSegmented composes the stage system prompt AND its provenance
+// segments. Each contributing block is tagged by its source and stability; the
+// parts sort by (stability tier, layer band, authored order) — identical
+// ordering to agent_sdk/engine.py:_compose_system_segmented — then join with
+// "\n\n". Returns the composed string and the {source, start, end, stability}
+// offset ranges over it (the probe trace's `system_segments`).
+func (e *Engine) composeSystemSegmented(st any, notes []string) (string, []map[string]any) {
+	parts := []systemPart{}
+	add := func(source, text, stability string) {
+		text = strings.TrimSpace(text)
+		if text == "" {
+			return
+		}
+		parts = append(parts, systemPart{source: source, text: text, stability: stability, idx: len(parts)})
 	}
-	return system + "\n\n[Notes gathered this turn]\n" + strings.Join(notes, "\n")
+	if e.Instructions != "" {
+		add("instructions", e.Instructions, "stable")
+	}
+	if e.SystemAddendum != "" {
+		add("memory_directive", e.SystemAddendum, "stable")
+	}
+	if sp := stageSystemPrompt(st); sp != "" {
+		add("stage_prompt", sp, "stable")
+	}
+	if len(notes) > 0 {
+		add("notes", "[Notes gathered this turn]\n"+strings.Join(notes, "\n"), "turn")
+	}
+	// The env tail: a turn-volatile date/time line, always last (the
+	// conversation + query own recency past it). Mirrors the Python engine
+	// appending datetime_block as the final part.
+	add("datetime", datetimeBlock(e.TZ, e.Lang), "turn")
+
+	// Stable sort by (stability tier, layer band, authored order) — slices.Sort
+	// would not preserve authored order within a band, so use a key-stable sort.
+	sort.SliceStable(parts, func(i, j int) bool {
+		ki := layerKey(parts[i])
+		kj := layerKey(parts[j])
+		if ki[0] != kj[0] {
+			return ki[0] < kj[0]
+		}
+		if ki[1] != kj[1] {
+			return ki[1] < kj[1]
+		}
+		return ki[2] < kj[2]
+	})
+
+	sep := "\n\n"
+	out := ""
+	segments := []map[string]any{}
+	for _, p := range parts {
+		if out != "" {
+			out += sep
+		}
+		start := len(out)
+		out += p.text
+		segments = append(segments, map[string]any{
+			"source": p.source, "start": start, "end": len(out), "stability": p.stability,
+		})
+	}
+	return out, segments
+}
+
+// layerKey is the sort key for one part: stability tier first (so the volatile
+// tail is contiguous), then the canonical layer band, then authored order.
+func layerKey(p systemPart) [3]int {
+	band, ok := promptLayers[p.source]
+	if !ok {
+		band = layerTask
+	}
+	return [3]int{stabRank[p.stability], band, p.idx}
+}
+
+// stageSystemPrompt returns the stage's per-stage system_prompt override ("" if
+// none) — used by per-todo sub-stages to carry a tailored instruction.
+func stageSystemPrompt(st any) string {
+	switch v := st.(type) {
+	case spec.Stage:
+		if v.SystemPrompt != nil {
+			return *v.SystemPrompt
+		}
+	case *spec.Stage:
+		if v != nil && v.SystemPrompt != nil {
+			return *v.SystemPrompt
+		}
+	case flows.FlowStep:
+		if v.SystemPrompt != nil {
+			return *v.SystemPrompt
+		}
+	case *flows.FlowStep:
+		if v != nil && v.SystemPrompt != nil {
+			return *v.SystemPrompt
+		}
+	case map[string]any:
+		if s, ok := v["system_prompt"].(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+// datetimeBlock renders one date/time line for the env tail (mirrors
+// agent_sdk/lobes/runtime.py:datetime_block). The exact timestamp is
+// turn-volatile; only its position (last) is asserted.
+func datetimeBlock(tzName, lang string) string {
+	if tzName == "" {
+		tzName = "UTC"
+	}
+	loc, err := time.LoadLocation(tzName)
+	if err != nil {
+		loc = time.UTC
+		tzName = "UTC"
+	}
+	now := time.Now().In(loc)
+	return fmt.Sprintf(
+		"Current date/time: %s (%s, %s). Resolve all relative date/time references in the user's language against this.",
+		now.Format("2006-01-02 15:04"), now.Format("Monday"), tzName,
+	)
 }
 
 // assistantToolUseMessage renders the model's tool_use turn as a message map so
@@ -500,14 +652,6 @@ func (e *Engine) resolveLobeRows(ctx map[string]any) []map[string]any {
 	return rows
 }
 
-func (e *Engine) composeSystem(stage string) string {
-	out := e.Instructions
-	if e.SystemAddendum != "" {
-		out += "\n\n" + e.SystemAddendum
-	}
-	return out
-}
-
 func (e *Engine) isGrounded(flow *flows.Flow) bool {
 	if flow == nil {
 		return false
@@ -568,10 +712,14 @@ func buildContext(query string, state session.SessionState, hostCtx any) map[str
 }
 
 func resolvePath(scores map[string]float64, paths []spec.Path) map[string]any {
+	// Deterministic resolution mirrors agent_sdk/network/activation.py:resolve_path:
+	// rank by (-score, name) so ties break by name ascending. Ranging the scores
+	// map directly is nondeterministic (Go randomises map iteration), which would
+	// flip ties between equally-scored paths from run to run.
 	bestName := "emergent"
 	bestScore := 0.0
 	for n, s := range scores {
-		if s > bestScore {
+		if s > bestScore || (s == bestScore && bestScore > 0 && n < bestName) {
 			bestName = n
 			bestScore = s
 		}
