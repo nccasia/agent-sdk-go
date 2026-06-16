@@ -95,7 +95,7 @@ Format: `- [ ] PythonName → go/import/path.GoName` (rungs flip `[ ]`→`[x]`).
 - [x] recognize_paths → core/feature.RecognizePaths
 - [x] resolve_path → core/activate.ResolvePath
 - [x] validate_network → core/spec.ValidateNetwork
-- [ ] tool_loop → engine.ToolLoop
+- [x] tool_loop → engine.ToolLoop
 - [x] LlmCall → contracts.LlmCall
 - [x] LobeServices → contracts.LobeServices
 - [x] TurnContext → contracts.TurnContext
