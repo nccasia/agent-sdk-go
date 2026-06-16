@@ -152,7 +152,7 @@ does NOT count them toward the 116-export gate.
 - [x] attentionbench → benchmarks.RunAttentionBench (select/recall/grounding/reply/determinism)
 - [x] corgictionbech → benchmarks.RunCorgictionBench (monitor/regulate/pinned/channel/plugin_surface/plan_compile)
 - [x] toolbench (free) → benchmarks.RunToolBench (spec/select/composite)
-- [ ] flowbench → benchmarks (needs engine.inspect-with-state for clarify routing)
-- [ ] statelessbench → benchmarks (needs agent_from_spec + AgentWorker pool semantics)
-- [ ] promptbench → benchmarks (needs trace system_segments + authored prompt constants)
-- [ ] live benches (agent/task/extension/skill/coding-agent/delegation) → benchmarks
+- [x] flowbench → benchmarks.RunFlowBench (execution/coverage/tiers; READY, check-id parity)
+- [x] statelessbench → benchmarks.RunStatelessBench (agent_from_spec + AgentWorker pool; READY, check-id parity)
+- [x] promptbench → benchmarks.RunPromptBench (quality over trace system_segments; READY, check-id parity)
+- [x] live benches (agent/task/extension/skill/coding-agent/delegation) → benchmarks.Run*Bench (registered, UNMEASURED without a provider; not gated)

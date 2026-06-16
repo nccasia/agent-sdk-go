@@ -18,7 +18,7 @@ Ported rung-by-rung along a dependency-ordered ladder (`tasks/`):
 |-------|-----------|-------|
 | 00–12 | contracts, lobes/network, events/result/session, engine, memory, metacognition/cognition, tools/mcp, skills, clients, agent facade, serve, plugins | ✅ ported |
 | 13 | inspection: probe, bench, report, viewer, blocks | ✅ ported |
-| 14 | benchmark spine (verdict/ratchet/provider, free-gate) | ✅ ported · suite partial¹ |
+| 14 | benchmark spine (verdict/ratchet/provider, free-gate) + benches | ✅ ported¹ |
 | 15 | runnable examples (coding-agent, subagents-analytics) | ✅ ported |
 
 **Parity: 116/116 exports** (`go run ./cmd/parity`) — 100% of the
@@ -26,17 +26,17 @@ Ported rung-by-rung along a dependency-ordered ladder (`tasks/`):
 `gofmt`/`go vet` clean and `go test ./... -race` green across all ported
 packages; both examples run offline-deterministic (`go test ./examples/...`).
 
-¹ The benchmark **spine** (verdict/ratchet/provider/registry/free-gate) and 3
-benches (attention, corgiction, tool) are ported and the free-gate is green.
-The remaining benches are tracked as unchecked progress rows in `PARITY.md`
-(excluded from the export gate — they are not `__all__` exports). Each is
-blocked on a Go-side SDK capability the Python reference has but this port does
-not yet expose:
-- `statelessbench` / `flowbench` — `agent_from_spec` rebuilder, `AgentWorker`
-  pool isolation, and `Engine.Inspect` with a `SessionState` argument;
-- `promptbench` — `system_segments` on probe-trace stages;
-- live benches (agent/task/extension/skill/coding-agent/delegation) — require a
-  real provider (`UNMEASURED` without one; not part of the free-gate).
+¹ The benchmark **spine** (verdict/ratchet/provider/registry/free-gate) plus
+every bench is ported (tracked as progress rows in `PARITY.md`, excluded from the
+export gate — they are not `__all__` exports). The free-gate (`go run ./cmd/bench`)
+is green and exits 0: each bench reproduces its Python source-of-truth verdict.
+- **Free benches** (deterministic, gated): `statelessbench`, `flowbench`,
+  `promptbench`, `toolbench`, `corgictionbech` → `READY`; `attentionbench` →
+  `NOT_READY` (the qna/research grounding scenarios reference a `cite` lobe that
+  does not fire without RAG — `run.py` exits 1 in Python too). Each ships a
+  check-id parity test against its `run.py` check ids.
+- **Live benches** (agent/task/extension/skill/coding-agent/delegation) — require
+  a real provider, so they report `UNMEASURED` without one and are not gated.
 
 ## Layout
 
@@ -75,7 +75,7 @@ gofmt -l .            # empty
 go vet ./...          # clean
 go test ./...         # green
 go run ./cmd/parity   # 116/116 exports (100%)
-go run ./cmd/bench    # free benches READY (rung 14)
+go run ./cmd/bench    # free-gate green / exit 0 (rung 14)
 go test ./examples/...# (rung 15)
 ```
 
