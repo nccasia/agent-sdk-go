@@ -100,9 +100,19 @@ func NewEngine(c clients.LlmCall) *Engine {
 }
 
 // Inspect is the no-LLM routing probe — recognize the path, surface the
-// flow, list the active lobes. Mirrors Engine.inspect.
+// flow, list the active lobes. Mirrors Engine.inspect with an empty state
+// (the cold-query call). Use InspectWithState to route a follow-up turn
+// against prior SessionState.
 func (e *Engine) Inspect(query string) result.ActivationSnapshot {
-	ctx := buildContext(query, session.SessionState{}, e.Context)
+	return e.InspectWithState(query, session.SessionState{})
+}
+
+// InspectWithState is the state-aware routing probe. When state carries
+// prior-turn context (history, meta-flow bias) the recognizers see it, so a
+// follow-up turn routes differently from the same query asked cold. Mirrors
+// the Python engine.inspect(query, state) seam.
+func (e *Engine) InspectWithState(query string, state session.SessionState) result.ActivationSnapshot {
+	ctx := buildContext(query, state, e.Context)
 	scores := map[string]float64{}
 	for _, p := range e.Paths {
 		if p.Recognizer != nil {
@@ -546,6 +556,13 @@ func buildContext(query string, state session.SessionState, hostCtx any) map[str
 				}
 			}
 		}
+	}
+	// Fold a metacognition flow bias the meta_control tool recorded on a
+	// PRIOR turn into the recognition ctx as a deterministic flag
+	// (meta_flow_bias_<path>) a plugin path recognizer can read. No-op when
+	// unset, so default routing is unchanged. Mirrors build_context.
+	if state.MetaFlowBias != "" {
+		out["meta_flow_bias_"+state.MetaFlowBias] = true
 	}
 	return out
 }

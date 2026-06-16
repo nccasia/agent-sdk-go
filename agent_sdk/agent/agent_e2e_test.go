@@ -164,6 +164,52 @@ func TestInspectIsNoLLM(t *testing.T) {
 	}
 }
 
+// TestInspectWithStateRoutesOnPriorTurn mirrors the Python
+// engine.inspect(query, state) seam: a follow-up turn whose prior
+// SessionState carries conversation history routes differently from the
+// same query asked cold. The anaphoric short question "what about that?"
+// routes to qna with no history (clarify needs prior context, scores 0),
+// but to clarify once a prior turn is present (has_history flips true).
+func TestInspectWithStateRoutesOnPriorTurn(t *testing.T) {
+	fake := clients.NewFakeClient([]any{"should not be called"}, nil)
+	a := MustPreactAgent(Config{Client: fake, Instructions: "x"})
+
+	const query = "what about that?"
+
+	// Cold query — empty state. Inspect(query) is the empty-state call.
+	cold := a.Inspect(query)
+	if cold.Path.Name != "qna" {
+		t.Fatalf("cold path = %q, want %q", cold.Path.Name, "qna")
+	}
+
+	// Same cold routing must come back via InspectWithState with an empty
+	// state — the two entry points agree when no prior context is given.
+	coldExplicit := a.InspectWithState(query, session.SessionState{})
+	if coldExplicit.Path.Name != cold.Path.Name {
+		t.Fatalf("InspectWithState(empty) path = %q, want %q (= Inspect)", coldExplicit.Path.Name, cold.Path.Name)
+	}
+
+	// Follow-up — prior turn in history. has_history flips true, so the
+	// clarify recognizer activates and outscores qna for this anaphoric
+	// short question.
+	prior := session.SessionState{History: []session.Turn{
+		{Role: "user", Content: "Tell me about the new spec."},
+		{Role: "assistant", Content: "It adds streaming and a new format."},
+	}}
+	followup := a.InspectWithState(query, prior)
+	if followup.Path.Name != "clarify" {
+		t.Fatalf("follow-up path = %q, want %q", followup.Path.Name, "clarify")
+	}
+	if followup.Path.Name == cold.Path.Name {
+		t.Fatalf("routing did not differ: cold=%q follow-up=%q", cold.Path.Name, followup.Path.Name)
+	}
+
+	// Still no LLM call on either branch — Inspect is the dry probe.
+	if len(fake.Calls) != 0 {
+		t.Errorf("inspect made %d LLM calls; want 0", len(fake.Calls))
+	}
+}
+
 // TestSessionPersistsHistory mirrors test_session_persists_history: two
 // queries against a Session round-trip the history through the store.
 func TestSessionPersistsHistory(t *testing.T) {

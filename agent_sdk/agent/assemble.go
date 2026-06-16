@@ -664,12 +664,20 @@ func (a *PreactAgent) ActWithSession(ctx context.Context, input string, sess *se
 	})
 }
 
-// Inspect is the dry, no-LLM routing probe. Mirrors PreactAgent.inspect.
+// Inspect is the dry, no-LLM routing probe with an empty state (the
+// cold-query call). Mirrors PreactAgent.inspect.
 func (a *PreactAgent) Inspect(input string) result.ActivationSnapshot {
+	return a.InspectWithState(input, session.SessionState{})
+}
+
+// InspectWithState is the state-aware routing probe: a follow-up turn routes
+// against the prior SessionState, so recognition/path resolution sees the
+// prior-turn context. Mirrors PreactAgent.inspect(query, state).
+func (a *PreactAgent) InspectWithState(input string, state session.SessionState) result.ActivationSnapshot {
 	if a.engine == nil {
 		return result.ActivationSnapshot{}
 	}
-	return a.engine.Inspect(input)
+	return a.engine.InspectWithState(input, state)
 }
 
 // RunSnapshot runs one turn STATELESSLY: restore from a plain-JSON snapshot,
