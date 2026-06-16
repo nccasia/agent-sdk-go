@@ -50,6 +50,7 @@ type Engine struct {
 	Lang             string
 	PromptFormat     string
 	Context          any
+	Weights          map[string]any
 	Budgets          map[string]any
 
 	// Plugin deep-hooks (populated by PreactAgent from AgentSetup).
@@ -92,6 +93,7 @@ func NewEngine(c clients.LlmCall) *Engine {
 		TZ:            "UTC",
 		Lang:          "en",
 		PromptFormat:  "xml",
+		Weights:       map[string]any{},
 		Budgets:       map[string]any{},
 		Metacognition: mustObserveMeta(),
 	}

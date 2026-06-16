@@ -148,6 +148,7 @@ func (a *PreactAgent) assemble() error {
 	a.engine.Lang = orDefault(cfg.Lang, "en")
 	a.engine.PromptFormat = orDefault(cfg.PromptFormat, "xml")
 	a.engine.Context = cfg.Context
+	a.engine.Weights = mapBudgets(cfg.Weights)
 	a.engine.Budgets = mapBudgets(cfg.Budgets)
 	a.engine.PrefetchHooks = a.prefetchHooks
 	a.engine.ToolFilters = a.toolFilters

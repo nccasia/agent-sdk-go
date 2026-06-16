@@ -614,8 +614,15 @@ func cloneConfig(c Config) Config {
 }
 
 // stageRow converts a stage (any of the supported types) to a Spec row.
+// Mirrors agent_sdk/spec.py:_stage_row.
 func stageRow(st any) map[string]any {
 	switch s := st.(type) {
+	case spec.Stage:
+		return specStageRow(s)
+	case *spec.Stage:
+		if s != nil {
+			return specStageRow(*s)
+		}
 	case *flows.FlowStep:
 		return map[string]any{
 			"name": s.Name, "lobes": s.Lobes, "loop": s.Loop, "tools": s.Tools,
@@ -625,4 +632,16 @@ func stageRow(st any) map[string]any {
 		return s
 	}
 	return nil
+}
+
+// specStageRow renders a spec.Stage to its serialized row (the Python
+// _stage_row field set), so a spec.Stage network round-trips through Spec().
+func specStageRow(s spec.Stage) map[string]any {
+	return map[string]any{
+		"id": s.ID, "name": s.Name, "description": s.Description,
+		"use_when": s.UseWhen, "lobes": s.Lobes, "loop": s.Loop,
+		"tools": s.Tools, "fanout_key": s.FanoutKey, "threshold": s.Threshold,
+		"model": s.Model, "temperature": s.Temperature,
+		"max_tokens": s.MaxTokens, "hops": s.Hops, "system_prompt": s.SystemPrompt,
+	}
 }
